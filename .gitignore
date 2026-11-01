@@ -1,0 +1,31 @@
+# 依赖
+node_modules/
+
+# 构建产物
+out/
+dist/
+
+# E2E
+test-results/
+playwright-report/
+
+# 测试覆盖率
+coverage/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!*.map
+
+# Electron
+release/
+
+# 环境/密钥
+.env
+.env.*
+*.local
+!*.local.example

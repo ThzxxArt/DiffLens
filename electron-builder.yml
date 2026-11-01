@@ -1,0 +1,66 @@
+appId: com.thzxxart.difflens
+productName: DiffLens
+copyright: Copyright © 2026 ThzxxArt
+electronLanguages:
+  - zh-CN
+  - en-US
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!vitest.config.{js,ts,mjs,cjs}'
+  - '!playwright.config.{js,ts,mjs,cjs}'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # 开发期专用文件不进入安装包（assets 仅为打包期图标源，运行时图标在 resources/）；
+  # e2e 与两份测试配置为 0.6.0 / 0.2.1 引入，0.4.1 排除清单的补漏
+  - '!docs/*'
+  - '!assets/*'
+  - '!e2e/*'
+
+asarUnpack:
+  - resources/**
+  # 解码 worker 脚本及其依赖 chunk：worker_threads 无法加载 asar 内脚本
+  # （Electron 的 asar 补丁不覆盖 worker 线程），主进程代码一并 unpack 保证依赖完整
+  - out/main/**
+
+win:
+  executableName: DiffLens
+  icon: assets/logo.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  artifactName: ${productName}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+
+mac:
+  icon: assets/logo.png
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - arm64
+
+linux:
+  icon: assets/logo.png
+  target:
+    - AppImage
+    - deb
+  maintainer: ThzxxArt
+  category: Development
+
+npmRebuild: false
