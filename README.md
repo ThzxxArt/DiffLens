@@ -117,7 +117,7 @@ e2e/          # Playwright E2E（对构建产物启动真实 Electron 验收主�
 - 作者：ThzxxArt
 - 仓库：https://github.com/ThzxxArt/DiffLens
 - 许可证：MIT License（见 [LICENSE](./LICENSE)）
-- 版本：0.11.0
+- 版本：0.11.1
 
 ---
 
