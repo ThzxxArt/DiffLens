@@ -41,7 +41,7 @@ export default tseslint.config(
       'src/preload/**/*.ts',
       'e2e/**/*.ts',
       'electron.vite.config.ts',
-      'vitest.config.ts',
+      'vitest.config.mts',
       'playwright.config.ts'
     ],
     languageOptions: {

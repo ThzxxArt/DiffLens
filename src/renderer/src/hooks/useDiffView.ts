@@ -16,7 +16,7 @@ import {
   type DiffRow,
   type DiffSummary
 } from '../diff/diffEngine'
-import { type DisplayItem, type FoldMarker, isFold } from '../components/DiffView'
+import { type DisplayItem, type FoldMarker, isFold } from '../components/diffViewModel'
 import { countLines } from '../diff/textUtils'
 import { canBuildPatch } from '../diff/report'
 import { useDiff } from './useDiff'

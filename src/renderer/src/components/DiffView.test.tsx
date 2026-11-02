@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import DiffView, { ROW_HEIGHT, type FoldMarker, type DisplayItem } from './DiffView'
+import DiffView from './DiffView'
+import { ROW_HEIGHT, type DisplayItem, type FoldMarker } from './diffViewModel'
 import type { DiffRow } from '../diff/diffEngine'
 
 beforeAll(() => {

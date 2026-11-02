@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import AboutModal, { ABOUT_INFO } from './AboutModal'
+import AboutModal from './AboutModal'
+import { ABOUT_INFO } from '../app/aboutInfo'
 
 function setup(overrides?: { version?: string }): {
   onClose: ReturnType<typeof vi.fn>
