@@ -5,6 +5,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # TS 7 原生编译器尚未被 typescript-eslint 支持，暂不自动升级
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # 与 Electron 45 内置 Node 24 对齐，暂不升级到 26.x
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
     groups:
       npm-minor:
         patterns:

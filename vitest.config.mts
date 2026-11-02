@@ -12,6 +12,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
+    // CI 慢机 / 覆盖率插桩下，字符级性能回归用例可能超过默认 5s；20s 仅作为上限
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     setupFiles: ['./src/renderer/src/test/setup.ts'],
     include: [
       'src/renderer/src/**/*.{test,spec}.{ts,tsx}',
