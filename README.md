@@ -1,5 +1,7 @@
 # DiffLens
 
+[![CI](https://github.com/ThzxxArt/DiffLens/actions/workflows/ci.yml/badge.svg)](https://github.com/ThzxxArt/DiffLens/actions/workflows/ci.yml)
+
 > 精美酷炫的开源文本差异化对比桌面应用
 > Text Diff Desktop App — built with **TypeScript + React + Electron**
 
@@ -47,30 +49,40 @@ DiffLens 是一款跨平台桌面文本对比工具，帮助你快速定位两�
 
 | 层次 | 技术 |
 | --- | --- |
-| 语言 | TypeScript |
-| UI | React 18 |
-| 桌面壳 | Electron |
-| 构建 | electron-vite (Vite 5) |
-| 打包 | electron-builder |
-| Diff 引擎 | jsdiff（行级 LCS + 词级词法 diff + 字符级 diff 与行回映射） |
+| 语言 | TypeScript 6.0 |
+| UI | React 19.3 |
+| 桌面壳 | Electron 45（Node 24 / Chromium 156） |
+| 构建 | electron-vite 6（Vite 8 / Rolldown） |
+| 打包 | electron-builder 26 |
+| 测试 | Vitest 5 + Playwright 1.64 |
+| Diff 引擎 | jsdiff 9（行级 LCS + 词级词法 diff + 字符级 diff 与行回映射） |
 | 后台计算 | Web Worker（Vite 内联打包） |
-| 编码 | iconv-lite |
+| 编码 | iconv-lite 0.7 |
 
 ---
 
 ## 🚀 快速开始
 
+> 环境要求：Node.js 24（见 `.nvmrc`）与 npm 12。
+
 ```bash
-# 安装依赖
+# 安装依赖（CI 使用 npm ci）
 npm install
 
 # 启动开发模式（打开 Electron 窗口）
 npm run dev
 
+# 代码质量
+npm run lint
+npm run format:check
+
+# 一键质量门禁（typecheck + lint + format + 单测 + 构建）
+npm run verify
+
 # 类型检查
 npm run typecheck
 
-# 运行测试（Vitest 单元 + 组件测试）
+# 运行测试（Vitest 单元 + 组件测试，覆盖率 80% 硬门禁）
 npm test
 
 # 运行 E2E 验收（先构建再对产物启动真实 Electron；发布前必跑）
@@ -96,19 +108,44 @@ npm run build:linux  # Linux AppImage / deb
 
 ```
 src/
-├── main/     # 主进程：窗口、菜单、文件/文件夹读取与编码探测（解码 worker 化）、批量读取与进度推送 IPC
-├── preload/  # 预加载：contextBridge 安全桥，仅暴露最小 API
-├── shared/   # 两进程共用的纯逻辑源码（忽略规则匹配器、文本扩展名清单、路径归一化）
-└── renderer/ # 渲染进程：React 界面与全部 diff 逻辑
-    ├── diff/         # diff 引擎（行级 + 词级高亮、字符级分块、报告与快照纯逻辑）
-    ├── hooks/        # 状态 hooks（diff 计算调度、下拉关闭）
-    ├── components/   # 界面组件（DiffView / FolderView / Toolbar 等）
-    └── styles/       # 全局主题样式
+├── main/                    # 主进程
+│   ├── index.ts             # 启动编排（生命周期 / 窗口 / IPC 注册）
+│   ├── window.ts            # 窗口创建与窗口状态
+│   ├── appState.ts          # 窗口 bounds / 目录 / 导出目录持久化
+│   ├── fileService.ts       # 文件读取、编码探测与解码 worker 调度
+│   ├── scanCacheService.ts  # 扫描缓存跨会话持久化
+│   ├── folderScan.ts        # 文件夹递归扫描与状态判定
+│   ├── scanIpc.ts           # folder:scan 入参校验与缓存源选择
+│   ├── decode.ts            # 编码探测与解码纯逻辑
+│   ├── decodeWorker.ts      # 解码 worker 入口
+│   ├── windowState.ts       # 窗口状态纯逻辑
+│   └── ipc/                 # appIpc / fileIpc / folderIpc
+├── preload/                 # contextBridge 安全桥，仅暴露最小 API
+├── shared/                  # 两进程共用纯逻辑（忽略规则 / 路径 / 文本扩展名）
+└── renderer/src/            # 渲染进程
+    ├── App.tsx              # 编排层（布局 / 快捷键 / 弹框）
+    ├── app/                 # 常量、偏好读写、关于信息
+    ├── hooks/               # usePreferences / useToast / useFilePanes
+    │                        # useDiffView / useFolderComparison / useReportExport
+    ├── components/          # DiffView / Toolbar / FolderView 等
+    │   └── folder/          # FolderHeader / FolderToolbar / FolderList / useFolderViewState
+    ├── diff/                # 报告、快照、文本工具
+    │   └── engine/          # types / common / lineDiff / charDiff
+    └── styles/              # 全局主题样式
 
-e2e/          # Playwright E2E（对构建产物启动真实 Electron 验收主链路）
+e2e/                         # Playwright E2E（真实 Electron 主链路）
+.github/workflows/ci.yml     # typecheck + lint + format + test + build
 ```
 
 **安全设计**：渲染进程通过 `contextBridge` 隔离，不直接接触 Node 能力；文件读取等系统操作统一收敛在主进程，仅经 IPC 白名单暴露。
+
+---
+
+## 🧪 质量与工程化
+
+- **691 个单测 + 32 条 E2E**，覆盖率 statements 94.75% / branches 89.49% / functions 95.11% / lines 95.82%
+- **ESLint 10 flat config + Prettier + EditorConfig**，CI 强制执行 typecheck / lint / format / test / build
+- **GitHub Actions CI + Dependabot**，依赖与 Actions 自动更新
 
 ---
 
@@ -117,7 +154,7 @@ e2e/          # Playwright E2E（对构建产物启动真实 Electron 验收主�
 - 作者：ThzxxArt
 - 仓库：https://github.com/ThzxxArt/DiffLens
 - 许可证：MIT License（见 [LICENSE](./LICENSE)）
-- 版本：0.11.1
+- 版本：0.12.0
 
 ---
 
