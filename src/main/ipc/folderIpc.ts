@@ -1,10 +1,22 @@
 import { dialog, ipcMain } from 'electron'
+import fs from 'fs'
 import { getAppState, saveStateAsync } from '../appState'
 import { getScanCache } from '../scanCacheStore'
 import { loadScanCacheStore, persistScanCache } from '../scanCacheService'
 import { resolveScanArgs } from '../scanIpc'
 import { scanFolders, SEMANTIC_MAX_BYTES } from '../folderScan'
 import { decodeMaybeWorker, isTextRel } from '../fileService'
+
+/** 根目录可读性校验：子目录失败可降级跳过，但用户选中的根目录不存在/不可读
+ *  不应被当成“该侧无文件”，否则会显示成全部仅左/仅右的误导性结果 */
+async function isReadableDirectory(dir: unknown): Promise<boolean> {
+  if (typeof dir !== 'string' || dir === '') return false
+  try {
+    return (await fs.promises.stat(dir)).isDirectory()
+  } catch {
+    return false
+  }
+}
 
 export function registerFolderIpc(): void {
   /** IPC: 选择文件夹（文件夹对比入口；记忆上次目录） */
@@ -39,6 +51,10 @@ export function registerFolderIpc(): void {
       scanId?: unknown
     ) => {
       try {
+        // 根目录必须存在且可读：单侧根失败直接报扫描失败，避免“全部仅左/仅右”的误导结果
+        if (!(await isReadableDirectory(leftDir)) || !(await isReadableDirectory(rightDir))) {
+          return { error: 'scan-failed' as const }
+        }
         // 入参防御性校验与增量缓存源选择（内存缓存优先，未携带/非法回退 userData 落盘缓存，惰性异步读盘）
         const args = await resolveScanArgs(previous, ignoreRules, async () =>
           getScanCache(await loadScanCacheStore(), leftDir, rightDir)

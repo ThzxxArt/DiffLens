@@ -26,6 +26,21 @@ describe('textUtils', () => {
     expect(isTextFile('CODE.MD')).toBe(true)
   })
 
+  it('dotfile 与常见无扩展名文件按文本放行', () => {
+    expect(isTextFile('.gitignore')).toBe(true)
+    expect(isTextFile('.env.local')).toBe(true)
+    expect(isTextFile('.editorconfig')).toBe(true)
+    expect(isTextFile('Dockerfile')).toBe(true)
+    expect(isTextFile('Dockerfile.dev')).toBe(true)
+    expect(isTextFile('Makefile')).toBe(true)
+    expect(isTextFile('v1.2/README')).toBe(true)
+  })
+
+  it('带点目录不参与扩展名截取（取最后一段文件名）', () => {
+    expect(isTextFile('v1.2/README')).toBe(true)
+    expect(isTextFile('v1.2/app.png')).toBe(false)
+  })
+
   it('文本扩展名清单非空', () => {
     expect(TEXT_EXTENSIONS.length).toBeGreaterThan(0)
     expect(TEXT_EXTENSIONS).toContain('txt')

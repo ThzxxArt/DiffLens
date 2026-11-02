@@ -13,8 +13,8 @@ import { normDir } from '../shared/pathNorm'
  *   单条缓存条目形态异常 → 丢弃该条（pair 内其余条目保留）。
  */
 
-/** 存储结构版本（不兼容变更时递增，旧文件整体作废） */
-export const SCAN_CACHE_VERSION = 1
+/** 存储结构版本（不兼容变更时递增，旧文件整体作废；v2 起目录对键改为 JSON 数组） */
+export const SCAN_CACHE_VERSION = 2
 /** 保存的目录对数量上限（超出按 savedAt 淘汰最旧） */
 export const SCAN_CACHE_PAIRS_MAX = 8
 
@@ -35,9 +35,12 @@ export const emptyScanCacheStore = (): ScanCacheStoreData => ({
   pairs: {}
 })
 
-/** 目录对键：两个归一化路径（shared/pathNorm）以 | 拼接（| 不出现在路径合法字符中） */
+/**
+ * 目录对键：两个归一化路径（shared/pathNorm）序列化为 JSON 数组。
+ * 不用 `|` 拼接——POSIX 文件名合法包含 `|`，`a|b|c` 会与 `a|b`+`c` 等组合撞键。
+ */
 export function pairKey(leftDir: string, rightDir: string): string {
-  return `${normDir(leftDir)}|${normDir(rightDir)}`
+  return JSON.stringify([normDir(leftDir), normDir(rightDir)])
 }
 
 /** 缓存条目的合法状态值 */

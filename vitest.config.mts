@@ -48,12 +48,12 @@ export default defineConfig({
         'src/main/decodeWorker.ts'
       ],
       all: true,
-      // CI 门禁：四项覆盖率不得低于 80%，否则测试失败
+      // CI 门禁：0.12.1 基线实际为 94.6/89.5/95.1/95.8，阈值上调留出合理余量
       thresholds: {
-        statements: 80,
-        branches: 80,
-        functions: 80,
-        lines: 80
+        statements: 90,
+        branches: 85,
+        functions: 90,
+        lines: 90
       }
     }
   }

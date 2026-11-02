@@ -19,6 +19,14 @@ describe('normDir - 路径归一化（两进程共用）', () => {
     expect(normDir('/home/A')).toBe('/home/A')
   })
 
+  it('盘符根保留根斜杠：C:\\ 是根目录，C: 是驱动器相对路径，两者不撞键', () => {
+    expect(normDir('C:\\')).toBe('c:/')
+    expect(normDir('C:/')).toBe('c:/')
+    expect(normDir('C://')).toBe('c:/')
+    expect(normDir('C:')).toBe('c:')
+    expect(normDir('C:\\')).not.toBe(normDir('C:'))
+  })
+
   it('非路径形态输入原样透传（盘符位置以外的小写化不生效）', () => {
     expect(normDir('ABC')).toBe('ABC')
     expect(normDir('')).toBe('')

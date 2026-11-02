@@ -312,6 +312,18 @@ test.describe('报告导出（主进程写盘链路）', () => {
     await expect(item).toBeDisabled()
     await app.close()
   })
+
+  test('开忽略空行后 Patch 菜单项禁用（行号省略导致 hunk 错位，0.12.1）', async () => {
+    const { app, window } = await launchApp()
+    await pasteText(window, 'left', 'a\n\nb')
+    await pasteText(window, 'right', 'a\n\nB')
+    await window.getByLabel('忽略空行').check()
+    await expect(window.getByText('有差异')).toBeVisible()
+    await window.getByRole('button', { name: '导出报告' }).click()
+    const item = window.getByRole('button', { name: 'Patch 标准差异' })
+    await expect(item).toBeDisabled()
+    await app.close()
+  })
 })
 
 test.describe('文件夹对比（主进程真实扫描链路）', () => {
@@ -341,7 +353,7 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       await expect(window.getByText('仅左 1')).toBeVisible()
       // 默认仅看差异：same.txt 被过滤，差异条目可见（树形视图显示文件尾段名）
       await expect(window.getByText('diff.txt')).toBeVisible()
-      await expect(window.getByText('sub')).toBeVisible()
+      await expect(window.getByText('sub', { exact: true })).toBeVisible()
       await expect(window.getByText('nested.txt')).toBeVisible()
       await expect(window.getByText('same.txt')).toHaveCount(0)
 
@@ -356,6 +368,22 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       await window.getByRole('button', { name: '← 返回文件夹对比' }).click()
       await expect(window.getByText('相同 1')).toBeVisible()
       await expect(window.getByText('diff.txt')).toBeVisible()
+      await app.close()
+    } finally {
+      await removeTmpDir(root)
+    }
+  })
+
+  test('根目录不存在/不可读：提示扫描失败，而不是显示全部仅一侧（0.12.1）', async () => {
+    const root = await makeTmpDir('difflens-e2e-missing-root-')
+    try {
+      const missingLeft = join(root, 'missing-left')
+      const missingRight = join(root, 'missing-right')
+      const { app, window } = await launchApp()
+      await stubOpenDialogSeq(app, [[missingLeft], [missingRight]])
+      await window.getByRole('button', { name: '对比文件夹' }).click()
+      await expect(window.getByText(/文件夹扫描失败，请检查目录是否存在且可访问/)).toBeVisible()
+      await expect(window.getByText('返回文件对比')).toHaveCount(0)
       await app.close()
     } finally {
       await removeTmpDir(root)
@@ -429,12 +457,12 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       // 关闭仅看差异：树形展示（sub 目录行 + 语义同条目标注）
       await window.getByLabel('仅看差异').uncheck()
       await expect(window.getByText('crlf.txt')).toBeVisible()
-      await expect(window.getByText('sub')).toBeVisible()
+      await expect(window.getByText('sub', { exact: true })).toBeVisible()
       await expect(window.getByText('same.txt')).toBeVisible()
       // 目录折叠/展开
-      await window.getByText('sub').click()
+      await window.getByText('sub', { exact: true }).click()
       await expect(window.getByText('same.txt')).toHaveCount(0)
-      await window.getByText('sub').click()
+      await window.getByText('sub', { exact: true }).click()
       await expect(window.getByText('same.txt')).toBeVisible()
       // 搜索过滤
       await window.getByPlaceholder('搜索文件名…').fill('crlf')
@@ -613,7 +641,7 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       expect(raw).toContain('diff.txt')
       // 结构为合法存储（版本 + 目录对键）
       const stored = JSON.parse(raw)
-      expect(stored.version).toBe(1)
+      expect(stored.version).toBe(2)
       expect(Object.keys(stored.pairs).length).toBeGreaterThanOrEqual(1)
 
       // 第二实例（同 userData，渲染端无内存缓存）：主进程注入盘上缓存，重扫结果正确
@@ -837,6 +865,16 @@ test.describe('拖拽导入（真实 Chromium DataTransfer 链路）', () => {
     ])
     await expect(window.getByText(/一次只能导入一个文件/)).toBeVisible()
     await expect(window.locator('.pane-file').filter({ hasText: 'first.txt' })).toBeVisible()
+    await app.close()
+  })
+
+  test('dotfile 拖入按文本放行（.gitignore，0.12.1）', async () => {
+    const { app, window } = await launchApp()
+    await dropFiles(window, '.pane-empty', [
+      { name: '.gitignore', content: 'node_modules/\ndist/\n' }
+    ])
+    await expect(window.locator('.pane-file').filter({ hasText: '.gitignore' })).toBeVisible()
+    await expect(window.getByText('node_modules/').first()).toBeVisible()
     await app.close()
   })
 })

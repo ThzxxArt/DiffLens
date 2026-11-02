@@ -316,6 +316,9 @@ button:disabled {
   flex: 1;
   padding: 0 10px;
   overflow: hidden;
+  /* 全局禁止选中仅为 UI 稳定；差异正文必须可拖选 + Ctrl+C 复制子串 */
+  user-select: text;
+  cursor: text;
 }
 
 /* 行级别背景 */

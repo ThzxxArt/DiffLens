@@ -1,5 +1,5 @@
 import type { DiffOptions } from '../diff/diffEngine'
-import { IGNORE_RULES_MAX } from '../../../shared/ignoreRules'
+import { IGNORE_RULES_MAX, IGNORE_RULE_MAX_LEN } from '../../../shared/ignoreRules'
 import { DEFAULT_OPTIONS, PREF_BOOL_KEYS, PREFS_KEY } from './constants'
 
 /** 持久化偏好的完整结构（比较选项 + 单文件/文件夹视图开关 + 文件夹忽略规则） */
@@ -41,14 +41,18 @@ export function loadPrefs(): Prefs {
       folderSemantic?: unknown
       folderIgnoreRules?: unknown
     }
-    const bool = (v: unknown, def: boolean): boolean => (v === undefined ? def : v === true)
+    // 严格 boolean：非布尔值（损坏数据中的 "yes" / 1 / null）一律回退默认值，
+    // 不能把默认 true 的字段静默降级为 false（会误关语义判等/文件夹仅看差异）
+    const bool = (v: unknown, def: boolean): boolean => (typeof v === 'boolean' ? v : def)
     const options: DiffOptions = { ...DEFAULT_OPTIONS }
     for (const k of PREF_BOOL_KEYS) {
       options[k] = bool(obj.options?.[k], false)
     }
     const ignoreRaw = obj.folderIgnoreRules
     const folderIgnoreRules = Array.isArray(ignoreRaw)
-      ? ignoreRaw.filter((r): r is string => typeof r === 'string').slice(0, IGNORE_RULES_MAX)
+      ? ignoreRaw
+          .filter((r): r is string => typeof r === 'string' && r.length <= IGNORE_RULE_MAX_LEN)
+          .slice(0, IGNORE_RULES_MAX)
       : []
     return {
       options,

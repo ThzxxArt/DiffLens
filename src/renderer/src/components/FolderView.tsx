@@ -13,7 +13,7 @@ import FolderHeader from './folder/FolderHeader'
 import FolderList from './folder/FolderList'
 import FolderToolbar from './folder/FolderToolbar'
 import { FALLBACK_VIEWPORT, FOLDER_ROW_HEIGHT, OVERSCAN } from './folder/folderViewConfig'
-import { useFolderViewState } from './folder/useFolderViewState'
+import { useFolderViewState, type FolderViewState } from './folder/useFolderViewState'
 
 export { FOLDER_ROW_HEIGHT } from './folder/folderViewConfig'
 
@@ -61,9 +61,40 @@ export interface FolderViewProps {
   onOpenEntry: (entry: FolderEntry) => void
   /** 双击目录行进入该目录的聚合对比（差异文件导航限定在子树内） */
   onOpenDir: (dirPath: string) => void
+  /** 外置视图状态（App 持有，跨单文件对比往返保留搜索/过滤/折叠）；缺省时组件内部自持 */
+  view?: FolderViewState
 }
 
-export default function FolderView({
+/**
+ * 文件夹视图入口：
+ * - App 传入 view 时使用外置状态（从文件夹进入单文件再返回，搜索/过滤/折叠不丢失）；
+ * - 未传入时内部创建状态（组件测试与独立复用场景保持原有行为）。
+ */
+export default function FolderView(props: FolderViewProps): ReactElement {
+  if (props.view !== undefined) {
+    return <FolderViewPresentational {...props} view={props.view} />
+  }
+  return <FolderViewWithState {...props} />
+}
+
+function FolderViewWithState(props: FolderViewProps): ReactElement {
+  const view = useFolderViewState({
+    leftDir: props.leftDir,
+    rightDir: props.rightDir,
+    entries: props.entries,
+    snapshot: props.snapshot,
+    snapshotDiff: props.snapshotDiff,
+    onlyDiff: props.onlyDiff,
+    onOnlyDiffChange: props.onOnlyDiffChange,
+    onIgnoreRulesChange: props.onIgnoreRulesChange
+  })
+  return <FolderViewPresentational {...props} view={view} />
+}
+
+type FolderViewPresentationalProps = FolderViewProps & { view: FolderViewState }
+
+function FolderViewPresentational({
+  view,
   leftDir,
   rightDir,
   entries,
@@ -74,11 +105,9 @@ export default function FolderView({
   searchInputRef,
   progress,
   onlyDiff,
-  onOnlyDiffChange,
   semantic,
   onSemanticChange,
   ignoreRules,
-  onIgnoreRulesChange,
   snapshot,
   snapshotDiff,
   onSaveSnapshot,
@@ -90,18 +119,7 @@ export default function FolderView({
   onExport,
   onOpenEntry,
   onOpenDir
-}: FolderViewProps): ReactElement {
-  const view = useFolderViewState({
-    leftDir,
-    rightDir,
-    entries,
-    snapshot,
-    snapshotDiff,
-    onlyDiff,
-    onOnlyDiffChange,
-    onIgnoreRulesChange
-  })
-
+}: FolderViewPresentationalProps): ReactElement {
   // 虚拟滚动：固定行高换算可见窗口（与 DiffView 同思路；对照模式与树形模式共用窗口状态）
   const scrollRef = useRef<HTMLDivElement>(null)
   const [range, setRange] = useState({ start: 0, end: 0 })

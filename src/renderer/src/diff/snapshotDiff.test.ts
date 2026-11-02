@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { FolderEntry } from '../../../preload/index'
 import {
   parseSnapshot,
+  serializeSnapshot,
   diffSnapshot,
   snapshotDirsMatch,
   isDiffStatus,
@@ -146,6 +147,31 @@ describe('parseSnapshot - v2 内容字段（contents）', () => {
     expect(SNAPSHOT_VERSION).toBe(2)
     expect(SNAPSHOT_FILE_MAX_BYTES).toBe(2 * 1024 * 1024)
     expect(SNAPSHOT_CONTENTS_MAX_CHARS).toBe(32 * 1024 * 1024)
+  })
+})
+
+describe('serializeSnapshot - 最终字节上限（0.12.1）', () => {
+  it('未超限时原样序列化，内容保留', () => {
+    const snap = {
+      ...makeSnapshot({ version: 2 }),
+      contents: { 'b.txt': { left: 'x'.repeat(100), right: null } }
+    }
+    const r = serializeSnapshot(snap, 10_000)
+    expect(r.degraded).toBe(false)
+    expect(parseSnapshot(r.json)?.contents?.['b.txt']?.left).toBe('x'.repeat(100))
+  })
+
+  it('控制字符 JSON 转义膨胀超过字节上限时降级为纯状态快照', () => {
+    // 2000 个 \u0001：JSON.stringify 会转义为 6 字节/字符 ≈ 12000 字节，
+    // 字符数很小但字节数超过 5000；状态快照本身只有几百字节
+    const snap = {
+      ...makeSnapshot({ version: 2 }),
+      contents: { 'b.txt': { left: '\u0001'.repeat(2000), right: null } }
+    }
+    const r = serializeSnapshot(snap, 5000)
+    expect(r.degraded).toBe(true)
+    expect(parseSnapshot(r.json)).not.toBeNull()
+    expect(parseSnapshot(r.json)?.contents).toBeUndefined()
   })
 })
 

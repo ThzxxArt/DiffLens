@@ -102,6 +102,24 @@ describe('plainFolderSummary', () => {
     const stats = countFolderStats([{ rel: 'b', status: 'different', leftSize: 1, rightSize: 2 }])
     expect(plainFolderSummary(stats, 1)).toBe('共 1 个文件存在差异：内容不同 1 个')
   })
+
+  it('只有无法读取的文件时不得声称完全一致（0.12.1）', () => {
+    const stats = countFolderStats([
+      { rel: 'locked.txt', status: 'unreadable', leftSize: 1, rightSize: 1 }
+    ])
+    expect(plainFolderSummary(stats, 1)).toBe('未发现内容差异，但有 1 个文件无法读取')
+  })
+
+  it('完全一致但存在无法读取文件时附带语义同说明', () => {
+    const stats = countFolderStats([
+      { rel: 'same.txt', status: 'same', leftSize: 1, rightSize: 1 },
+      { rel: 'sem.txt', status: 'semantic-same', leftSize: 1, rightSize: 2 },
+      { rel: 'locked.txt', status: 'unreadable', leftSize: 1, rightSize: 1 }
+    ])
+    expect(plainFolderSummary(stats, 3)).toBe(
+      '未发现内容差异，但有 1 个文件无法读取（另有 1 个仅空白/换行差异，不计入不同）'
+    )
+  })
 })
 
 describe('buildFolderReport - HTML', () => {
@@ -142,6 +160,16 @@ describe('buildFolderReport - HTML', () => {
     )
     expect(html).toContain('verdict ok')
     expect(html).toContain('两文件夹内容完全一致')
+  })
+
+  it('存在无法读取文件时 verdict 不为 ok，结论明确提示（0.12.1）', () => {
+    const html = buildFolderReport(
+      [{ rel: 'locked', status: 'unreadable', leftSize: 1, rightSize: 1 }],
+      CTX,
+      'html'
+    )
+    expect(html).toContain('未发现内容差异，但有 1 个文件无法读取')
+    expect(html).not.toContain('verdict ok')
   })
 
   it('approximate 条目渲染 ≈ 标注', () => {

@@ -29,6 +29,13 @@ describe('fileService - isTextRel', () => {
     expect(isTextRel('noext')).toBe(true)
     expect(isTextRel('A.TXT')).toBe(true)
   })
+
+  it('dotfile 与带点目录按最后一段文件名判定', () => {
+    expect(isTextRel('.gitignore')).toBe(true)
+    expect(isTextRel('config/.env.local')).toBe(true)
+    expect(isTextRel('v1.2/README')).toBe(true)
+    expect(isTextRel('v1.2/app.png')).toBe(false)
+  })
 })
 
 describe('fileService - readTextFile', () => {

@@ -23,15 +23,23 @@ function entry(rel: string, status: ScanCacheEntry['status'] = 'same'): ScanCach
 
 describe('pairKey - 目录对键归一化', () => {
   it('反斜杠转斜杠、去尾分隔符', () => {
-    expect(pairKey('C:\\left\\', 'D:\\right\\')).toBe('c:/left|d:/right')
+    expect(pairKey('C:\\left\\', 'D:\\right\\')).toBe(JSON.stringify(['c:/left', 'd:/right']))
   })
 
   it('Windows 盘符大小写归一（其余路径段保留原大小写）', () => {
-    expect(pairKey('d:/Foo', 'D:/Foo')).toBe('d:/Foo|d:/Foo')
-    expect(pairKey('D:\\Foo', 'd:/Foo')).toBe('d:/Foo|d:/Foo')
+    expect(pairKey('d:/Foo', 'D:/Foo')).toBe(JSON.stringify(['d:/Foo', 'd:/Foo']))
+    expect(pairKey('D:\\Foo', 'd:/Foo')).toBe(JSON.stringify(['d:/Foo', 'd:/Foo']))
     // 大小写敏感文件系统的不同路径不撞键
-    expect(pairKey('/home/A', '/home/B')).toBe('/home/A|/home/B')
+    expect(pairKey('/home/A', '/home/B')).toBe(JSON.stringify(['/home/A', '/home/B']))
     expect(pairKey('/home/A', '/home/a')).not.toBe(pairKey('/home/A', '/home/A'))
+  })
+
+  it('POSIX 路径中的竖线不会造成目录对键碰撞', () => {
+    expect(pairKey('/a|b', '/c')).not.toBe(pairKey('/a', '/b|c'))
+  })
+
+  it('盘符根与驱动器相对路径不撞键', () => {
+    expect(pairKey('C:\\', 'D:\\')).not.toBe(pairKey('C:', 'D:'))
   })
 })
 
@@ -46,35 +54,37 @@ describe('parseScanCacheStore - 防御性解析', () => {
   })
 
   it('顶层结构异常（pairs 非对象）回退空存储', () => {
-    expect(parseScanCacheStore(JSON.stringify({ version: 1, pairs: [] }))).toEqual(
+    expect(parseScanCacheStore(JSON.stringify({ version: 2, pairs: [] }))).toEqual(
       emptyScanCacheStore()
     )
-    expect(parseScanCacheStore(JSON.stringify({ version: 1, pairs: 'x' }))).toEqual(
+    expect(parseScanCacheStore(JSON.stringify({ version: 2, pairs: 'x' }))).toEqual(
       emptyScanCacheStore()
     )
   })
 
   it('形态异常的 pair 被丢弃，合法 pair 保留', () => {
+    const key = pairKey('a', 'b')
     const raw = JSON.stringify({
-      version: 1,
+      version: 2,
       pairs: {
-        'a|b': { cache: [entry('x.txt')], savedAt: 100 },
+        [key]: { cache: [entry('x.txt')], savedAt: 100 },
         bad: { cache: 'not-array', savedAt: 100 },
         bad2: { cache: [entry('y.txt')], savedAt: 'no-time' },
         bad3: null
       }
     })
     const data = parseScanCacheStore(raw)
-    expect(Object.keys(data.pairs)).toEqual(['a|b'])
+    expect(Object.keys(data.pairs)).toEqual([key])
     expect(getScanCache(data, 'a', 'b')).toEqual([entry('x.txt')])
   })
 
   it('单条异常 entry 被过滤，其余条目保留', () => {
     const good = entry('keep.txt')
+    const key = pairKey('a', 'b')
     const raw = JSON.stringify({
-      version: 1,
+      version: 2,
       pairs: {
-        'a|b': {
+        [key]: {
           cache: [
             good,
             { rel: 'x', status: 'unknown-status', leftFp: null, rightFp: null, semSame: null },

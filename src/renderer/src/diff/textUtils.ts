@@ -1,17 +1,14 @@
 import { splitLines } from './diffEngine'
-import { TEXT_EXTENSIONS } from '../../../shared/textExtensions'
+import { TEXT_EXTENSIONS, isTextFileName } from '../../../shared/textExtensions'
 
 export { TEXT_EXTENSIONS }
 
 /**
- * 判断文件名是否为允许的文本文件。
- * 无扩展名的文件按文本尝试放行；有扩展名但不在文本列表内则视为非文本。
+ * 判断文件名是否为允许的文本文件（与主进程 folderScan 共用 shared 单一实现）。
+ * dotfile、常见无扩展名文件、无扩展名文件放行；其余按扩展名白名单判断。
  */
 export function isTextFile(name: string): boolean {
-  const dot = name.lastIndexOf('.')
-  if (dot < 0) return true
-  const ext = name.slice(dot + 1).toLowerCase()
-  return TEXT_EXTENSIONS.includes(ext)
+  return isTextFileName(name)
 }
 
 /** 超多行预警阈值：超过该行数时提示后台计算可能耗时（diff 计算 worker 化后不阻塞界面） */

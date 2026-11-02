@@ -65,7 +65,15 @@ export function countFolderStats(entries: FolderEntry[]): FolderStats {
 export function plainFolderSummary(stats: FolderStats, entriesLen: number): string {
   if (entriesLen === 0) return '两个文件夹内都没有文件'
   const diffTotal = stats.different + stats.leftOnly + stats.rightOnly
+  const semNote =
+    stats.semanticSame > 0 ? `（另有 ${stats.semanticSame} 个仅空白/换行差异，不计入不同）` : ''
+  const unreadNote =
+    stats.unreadable > 0 ? `；另有 ${stats.unreadable} 个文件无法读取（被占用/权限）` : ''
   if (diffTotal === 0) {
+    // 无法读取不等于一致：必须把读取失败明确写进结论，不能用绿色“完全一致”掩盖
+    if (stats.unreadable > 0) {
+      return `未发现内容差异，但有 ${stats.unreadable} 个文件无法读取${semNote}`
+    }
     return stats.semanticSame > 0
       ? `两文件夹内容完全一致（其中 ${stats.semanticSame} 个文件仅空白/换行差异）`
       : '两文件夹内容完全一致'
@@ -74,10 +82,6 @@ export function plainFolderSummary(stats: FolderStats, entriesLen: number): stri
   if (stats.different > 0) parts.push(`内容不同 ${stats.different} 个`)
   if (stats.leftOnly > 0) parts.push(`仅左侧 ${stats.leftOnly} 个`)
   if (stats.rightOnly > 0) parts.push(`仅右侧 ${stats.rightOnly} 个`)
-  const semNote =
-    stats.semanticSame > 0 ? `（另有 ${stats.semanticSame} 个仅空白/换行差异，不计入不同）` : ''
-  const unreadNote =
-    stats.unreadable > 0 ? `；另有 ${stats.unreadable} 个文件无法读取（被占用/权限）` : ''
   return `共 ${diffTotal} 个文件存在差异：${parts.join('、')}${semNote}${unreadNote}`
 }
 
@@ -173,7 +177,8 @@ function buildFolderHtml(
   ctx: FolderReportContext,
   stats: FolderStats
 ): string {
-  const verdictOk = stats.different + stats.leftOnly + stats.rightOnly === 0
+  const verdictOk =
+    stats.different + stats.leftOnly + stats.rightOnly === 0 && stats.unreadable === 0
   const semLine = ctx.semantic
     ? '判定口径：语义判等开启（空白/换行差异计为语义同，不计入不同）'
     : '判定口径：字节级严格比对（任何字节差异均计为不同）'
