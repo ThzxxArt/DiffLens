@@ -199,11 +199,9 @@ describe('computeDiff - 忽略所有空白', () => {
   })
 
   it('缩进与符号间空白差异判等（代码场景）', () => {
-    const { summary } = computeDiff(
-      '    if (x) { return 1; }',
-      'if(x){return 1;}',
-      { ignoreAllWhitespace: true }
-    )
+    const { summary } = computeDiff('    if (x) { return 1; }', 'if(x){return 1;}', {
+      ignoreAllWhitespace: true
+    })
     expect(summary.changedLines).toBe(0)
   })
 
@@ -234,7 +232,10 @@ describe('computeDiff - 忽略所有空白', () => {
   it('空行数量差异不受该选项影响（需配合忽略空行）', () => {
     const { summary } = computeDiff('a\n\nb', 'a\nb', { ignoreAllWhitespace: true })
     expect(summary.deleted).toBe(1)
-    const both = computeDiff('a\n\nb', 'a\nb', { ignoreAllWhitespace: true, ignoreBlankLines: true })
+    const both = computeDiff('a\n\nb', 'a\nb', {
+      ignoreAllWhitespace: true,
+      ignoreBlankLines: true
+    })
     expect(both.summary.changedLines).toBe(0)
   })
 
@@ -529,9 +530,13 @@ describe('computeDiff - 字符级对比（分块锚定）', () => {
     const base = Array.from({ length: 1000 }, (_, i) => `line-${i}-content`)
     const modified = [...base]
     modified[500] = 'line-500-CONTENT'
-    const { rows, summary, charModeDowngraded } = computeDiff(base.join('\n'), modified.join('\n'), {
-      charMode: true
-    })
+    const { rows, summary, charModeDowngraded } = computeDiff(
+      base.join('\n'),
+      modified.join('\n'),
+      {
+        charMode: true
+      }
+    )
     expect(charModeDowngraded).toBeUndefined()
     expect(summary.changedLines).toBe(1)
     expect(summary.modified).toBe(1)
@@ -617,9 +622,7 @@ describe('computeDiff - 字符级对比（分块锚定）', () => {
     expect(result.charModeDowngraded).toBeUndefined()
     expect(result.charModePartial).toBe(true)
     // 组 1（cat↔cap）字符级精确定位：1 个 modified，字符粒度高亮
-    const cat = result.rows.find(
-      (r) => r.rowKind === 'modified' && r.left.text === 'cat'
-    )!
+    const cat = result.rows.find((r) => r.rowKind === 'modified' && r.left.text === 'cat')!
     expect(cat.right.text).toBe('cap')
     expect(cat.left.segs!.some((s) => s.kind === 'delete' && s.text.includes('t'))).toBe(true)
     expect(cat.right.segs!.some((s) => s.kind === 'insert' && s.text.includes('p'))).toBe(true)
@@ -685,7 +688,9 @@ describe('computeDiff - 字符级对比（分块锚定）', () => {
     expect(mods).toHaveLength(3)
     expect(mods.some((m) => m.left.text === 'small-l' && m.right.text === 'small-r')).toBe(true)
     expect(mods.some((m) => (m.left.text ?? '').startsWith('x'))).toBe(true)
-    expect(mods.some((m) => m.left.text === 'only-left-line' && m.right.text === 'r-line-1')).toBe(true)
+    expect(mods.some((m) => m.left.text === 'only-left-line' && m.right.text === 'r-line-1')).toBe(
+      true
+    )
     // 多余右侧 r2 → added；无 removed
     const added = result.rows.filter((r) => r.rowKind === 'added')
     expect(added.map((r) => r.right.text)).toEqual(['r-line-2'])
@@ -759,8 +764,14 @@ describe('computeDiff - 字符级对比（字符换位专项）', () => {
     expect(joinSegs(m.left.segs)).toBe('你好')
     expect(joinSegs(m.right.segs)).toBe('好你')
     // 变更段按码点切分（不含半个代理对）：删除段与新增段的码点数一致为 1
-    const lDel = m.left.segs!.filter((s) => s.kind === 'delete').map((s) => s.text).join('')
-    const rIns = m.right.segs!.filter((s) => s.kind === 'insert').map((s) => s.text).join('')
+    const lDel = m.left
+      .segs!.filter((s) => s.kind === 'delete')
+      .map((s) => s.text)
+      .join('')
+    const rIns = m.right
+      .segs!.filter((s) => s.kind === 'insert')
+      .map((s) => s.text)
+      .join('')
     expect([...lDel]).toHaveLength(1)
     expect([...rIns]).toHaveLength(1)
   })

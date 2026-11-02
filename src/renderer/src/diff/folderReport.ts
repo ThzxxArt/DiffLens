@@ -74,8 +74,10 @@ export function plainFolderSummary(stats: FolderStats, entriesLen: number): stri
   if (stats.different > 0) parts.push(`内容不同 ${stats.different} 个`)
   if (stats.leftOnly > 0) parts.push(`仅左侧 ${stats.leftOnly} 个`)
   if (stats.rightOnly > 0) parts.push(`仅右侧 ${stats.rightOnly} 个`)
-  const semNote = stats.semanticSame > 0 ? `（另有 ${stats.semanticSame} 个仅空白/换行差异，不计入不同）` : ''
-  const unreadNote = stats.unreadable > 0 ? `；另有 ${stats.unreadable} 个文件无法读取（被占用/权限）` : ''
+  const semNote =
+    stats.semanticSame > 0 ? `（另有 ${stats.semanticSame} 个仅空白/换行差异，不计入不同）` : ''
+  const unreadNote =
+    stats.unreadable > 0 ? `；另有 ${stats.unreadable} 个文件无法读取（被占用/权限）` : ''
   return `共 ${diffTotal} 个文件存在差异：${parts.join('、')}${semNote}${unreadNote}`
 }
 
@@ -360,7 +362,10 @@ function buildFolderMd(
   const snaps = ctx.snapshotEntries
   if (snaps) {
     // 变迁对照表（全量含 stable）
-    out.push('| 变迁 | 相对路径 | 当前状态 | 基线状态 | 左侧大小 | 右侧大小 |', '| --- | --- | --- | --- | --- | --- |')
+    out.push(
+      '| 变迁 | 相对路径 | 当前状态 | 基线状态 | 左侧大小 | 右侧大小 |',
+      '| --- | --- | --- | --- | --- | --- |'
+    )
     if (snaps.length === 0) {
       out.push('| （空） | 快照与当前结果都没有条目 | — | — | — | — |')
     } else {
@@ -369,7 +374,9 @@ function buildFolderMd(
         const rel = e.rel.replace(/\|/g, '\\|')
         const cur = e.current ? STATUS_LABEL[e.current.status] : '—'
         const base = e.baseline ? STATUS_LABEL[e.baseline.status] : '—'
-        out.push(`| ${SNAPSHOT_CHANGE_LABEL[e.change]} | \`${rel}\` | ${cur} | ${base} | ${fmtSize(display.leftSize)} | ${fmtSize(display.rightSize)} |`)
+        out.push(
+          `| ${SNAPSHOT_CHANGE_LABEL[e.change]} | \`${rel}\` | ${cur} | ${base} | ${fmtSize(display.leftSize)} | ${fmtSize(display.rightSize)} |`
+        )
       }
     }
   } else {
@@ -379,7 +386,9 @@ function buildFolderMd(
     } else {
       for (const e of entries) {
         const rel = e.rel.replace(/\|/g, '\\|')
-        out.push(`| ${STATUS_LABEL[e.status]} | \`${rel}\`${e.approximate ? ' ≈' : ''} | ${fmtSize(e.leftSize)} | ${fmtSize(e.rightSize)} |`)
+        out.push(
+          `| ${STATUS_LABEL[e.status]} | \`${rel}\`${e.approximate ? ' ≈' : ''} | ${fmtSize(e.leftSize)} | ${fmtSize(e.rightSize)} |`
+        )
       }
     }
   }

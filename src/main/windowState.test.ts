@@ -24,15 +24,17 @@ describe('parseState', () => {
   })
 
   it('bounds 字段类型异常或缺失时被忽略', () => {
-    expect(parseState(JSON.stringify({ bounds: { x: 'a', y: 2, width: 1000, height: 700 } })).bounds).toBeUndefined()
-    expect(parseState(JSON.stringify({ bounds: { x: 1, y: 2, width: 1000 } })).bounds).toBeUndefined()
+    expect(
+      parseState(JSON.stringify({ bounds: { x: 'a', y: 2, width: 1000, height: 700 } })).bounds
+    ).toBeUndefined()
+    expect(
+      parseState(JSON.stringify({ bounds: { x: 1, y: 2, width: 1000 } })).bounds
+    ).toBeUndefined()
     expect(parseState(JSON.stringify({ bounds: null })).bounds).toBeUndefined()
   })
 
   it('bounds 含 NaN/Infinity 等非有限数值时被忽略', () => {
-    const s = parseState(
-      '{"bounds":{"x":NaN,"y":2,"width":1000,"height":700}}'
-    )
+    const s = parseState('{"bounds":{"x":NaN,"y":2,"width":1000,"height":700}}')
     expect(s.bounds).toBeUndefined()
   })
 

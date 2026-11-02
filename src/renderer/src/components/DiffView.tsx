@@ -11,33 +11,14 @@ import {
 } from 'react'
 import { DiffRow, SideCell } from '../diff/diffEngine'
 import { displayCols } from '../diff/textUtils'
+import { ROW_HEIGHT, isFold, type DisplayItem, type PaneMeta } from './diffViewModel'
 
-export interface PaneMeta {
-  name: string
-  encoding: string
-}
-
-/** 虚拟行高（px）。与 global.css 的 --line-height: 21px 保持一致，改动需双向同步 */
-export const ROW_HEIGHT = 21
 /** 窗口上下各多渲染的缓冲行数 */
 const OVERSCAN = 8
 /** 视口高度兜底值（jsdom 无布局，clientHeight 为 0 时使用） */
 const FALLBACK_VIEWPORT = 600
 /** 内容最小宽度 = 列宽 × 字符宽 + 行号列与内边距的固定开销 */
 const CONTENT_WIDTH_PAD = 86
-
-/** “仅看差异”视图中的折叠提示行（占用一个虚拟行位，高度与其他行一致） */
-export interface FoldMarker {
-  fold: true
-  /** 被折叠的未更改行数 */
-  skipped: number
-  /** 自定义提示文案（如“完全一致”场景） */
-  note?: string
-}
-
-export type DisplayItem = DiffRow | FoldMarker
-
-export const isFold = (item: DisplayItem): item is FoldMarker => 'fold' in item
 
 interface DiffViewProps {
   items: DisplayItem[]
@@ -123,7 +104,7 @@ function SidePanel({
   onOpen: (side: 'left' | 'right') => void
   onRowContext: (e: ReactMouseEvent, side: 'left' | 'right', cell: SideCell) => void
   onDropFile: (side: 'left' | 'right', files: File[]) => void
-  scrollRef: RefObject<HTMLDivElement>
+  scrollRef: RefObject<HTMLDivElement | null>
   onScroll: () => void
   activeRowId: string | null
   minWidth: number | undefined
@@ -144,6 +125,7 @@ function SidePanel({
   // 挂载与行集变化时重算窗口；行数未变时窗口按索引自然刷新
   useLayoutEffect(() => {
     updateRange()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items])
 
   // 窗口尺寸变化时补齐窗口
@@ -266,15 +248,13 @@ export default function DiffView({
 
   // 双向滚动同步（差值判断，无锁）：一侧滚动后仅在两侧位置差超过 1px 时回写对侧；
   // 回写触发的对侧 scroll 事件因差值归零自然终止，不依赖 rAF 时序假设，快速滚动不丢帧
-  const makeScrollSync =
-    (target: 'left' | 'right') =>
-    (): void => {
-      const src = target === 'left' ? leftRef.current : rightRef.current
-      const dst = target === 'left' ? rightRef.current : leftRef.current
-      if (!src || !dst) return
-      if (Math.abs(dst.scrollTop - src.scrollTop) > 1) dst.scrollTop = src.scrollTop
-      if (Math.abs(dst.scrollLeft - src.scrollLeft) > 1) dst.scrollLeft = src.scrollLeft
-    }
+  const makeScrollSync = (target: 'left' | 'right') => (): void => {
+    const src = target === 'left' ? leftRef.current : rightRef.current
+    const dst = target === 'left' ? rightRef.current : leftRef.current
+    if (!src || !dst) return
+    if (Math.abs(dst.scrollTop - src.scrollTop) > 1) dst.scrollTop = src.scrollTop
+    if (Math.abs(dst.scrollLeft - src.scrollLeft) > 1) dst.scrollLeft = src.scrollLeft
+  }
 
   // 差异导航定位：目标行换算为受控 scrollTop（虚拟化下行可能未渲染，scrollIntoView 不可用）
   useEffect(() => {

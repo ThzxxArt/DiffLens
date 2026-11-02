@@ -7,9 +7,7 @@ describe('ContextMenu', () => {
     const action = vi.fn()
     const onClose = vi.fn()
     const items: ContextMenuItem[] = [{ label: '复制此行内容', action }]
-    const { container } = render(
-      <ContextMenu x={10} y={10} items={items} onClose={onClose} />
-    )
+    const { container } = render(<ContextMenu x={10} y={10} items={items} onClose={onClose} />)
     fireEvent.click(screen.getByText('复制此行内容'))
     expect(action).toHaveBeenCalledTimes(1)
     expect(onClose).toHaveBeenCalled()
@@ -31,9 +29,7 @@ describe('ContextMenu', () => {
 
   it('点击遮罩层触发关闭', () => {
     const onClose = vi.fn()
-    const { container } = render(
-      <ContextMenu x={10} y={10} items={[]} onClose={onClose} />
-    )
+    const { container } = render(<ContextMenu x={10} y={10} items={[]} onClose={onClose} />)
     const backdrop = container.querySelector('.ctx-backdrop')
     expect(backdrop).not.toBeNull()
     fireEvent.mouseDown(backdrop as Element)
@@ -42,9 +38,7 @@ describe('ContextMenu', () => {
 
   it('右键遮罩层触发关闭', () => {
     const onClose = vi.fn()
-    const { container } = render(
-      <ContextMenu x={10} y={10} items={[]} onClose={onClose} />
-    )
+    const { container } = render(<ContextMenu x={10} y={10} items={[]} onClose={onClose} />)
     fireEvent.contextMenu(container.querySelector('.ctx-backdrop') as Element)
     expect(onClose).toHaveBeenCalled()
   })
@@ -85,12 +79,7 @@ describe('ContextMenu', () => {
 
   it('未溢出时保持原始坐标', () => {
     render(
-      <ContextMenu
-        x={10}
-        y={10}
-        items={[{ label: '菜单项', action: vi.fn() }]}
-        onClose={vi.fn()}
-      />
+      <ContextMenu x={10} y={10} items={[{ label: '菜单项', action: vi.fn() }]} onClose={vi.fn()} />
     )
     const menu = document.querySelector('.ctx-menu') as HTMLElement
     expect(menu.style.left).toBe('10px')
@@ -113,7 +102,14 @@ describe('ContextMenu', () => {
       expect(screen.getByText('A')).not.toHaveClass('active')
       // 无高亮语义验证：重新渲染后按上 → 末项
       cleanup()
-      render(<ContextMenu x={10} y={10} items={mkItems([{ label: 'A' }, { label: 'B' }, { label: 'C' }])} onClose={vi.fn()} />)
+      render(
+        <ContextMenu
+          x={10}
+          y={10}
+          items={mkItems([{ label: 'A' }, { label: 'B' }, { label: 'C' }])}
+          onClose={vi.fn()}
+        />
+      )
       fireEvent.keyDown(document, { key: 'ArrowUp' })
       expect(screen.getByText('C')).toHaveClass('active')
     })
@@ -141,7 +137,10 @@ describe('ContextMenu', () => {
       const action = vi.fn()
       const onClose = vi.fn()
       // 被测 spy 挂在第二项：两次 ArrowDown 高亮到该项后 Enter 触发
-      const items: ContextMenuItem[] = [{ label: 'A', action: vi.fn() }, { label: 'B', action }]
+      const items: ContextMenuItem[] = [
+        { label: 'A', action: vi.fn() },
+        { label: 'B', action }
+      ]
       render(<ContextMenu x={10} y={10} items={items} onClose={onClose} />)
       // 无高亮：Enter 无操作
       fireEvent.keyDown(document, { key: 'Enter' })
@@ -162,7 +161,10 @@ describe('ContextMenu', () => {
     })
 
     it('全部禁用时方向键不高亮任何项（不崩溃）', () => {
-      const items = mkItems([{ label: 'A', disabled: true }, { label: 'B', disabled: true }])
+      const items = mkItems([
+        { label: 'A', disabled: true },
+        { label: 'B', disabled: true }
+      ])
       render(<ContextMenu x={10} y={10} items={items} onClose={vi.fn()} />)
       fireEvent.keyDown(document, { key: 'ArrowDown' })
       fireEvent.keyDown(document, { key: 'ArrowUp' })

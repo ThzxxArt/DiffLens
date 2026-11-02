@@ -25,7 +25,13 @@ function rowsOf(kinds: string[]): DiffRow[] {
     const right = { lineNo: k === 'r' ? null : n, text: k === 'r' ? null : `R${n}`, segs: null }
     return {
       id,
-      rowKind: (k === 'a' ? 'added' : k === 'r' ? 'removed' : k === 'm' ? 'modified' : 'unchanged') as DiffRow['rowKind'],
+      rowKind: (k === 'a'
+        ? 'added'
+        : k === 'r'
+          ? 'removed'
+          : k === 'm'
+            ? 'modified'
+            : 'unchanged') as DiffRow['rowKind'],
       isChanged: changed,
       left,
       right
@@ -72,7 +78,13 @@ describe('buildSegments - 差异分块', () => {
     const segs = buildSegments(rowsOf(kinds))
     expect(segs).toHaveLength(2)
     expect(segs[0]).toMatchObject({ start: 0, end: 5, changes: 1, skippedBefore: 0 })
-    expect(segs[1]).toMatchObject({ start: 17, end: 23, changes: 1, skippedBefore: 11, skippedAfter: 6 })
+    expect(segs[1]).toMatchObject({
+      start: 17,
+      end: 23,
+      changes: 1,
+      skippedBefore: 11,
+      skippedAfter: 6
+    })
   })
 
   it('自定义 context=0 时仅展示变更行本身', () => {
@@ -85,19 +97,40 @@ describe('buildSegments - 差异分块', () => {
 describe('plainSummary - 人话总结', () => {
   it('无差异时给出一致结论', () => {
     expect(
-      plainSummary({ changedLines: 0, inserted: 0, deleted: 0, modified: 0, charsAdded: 0, charsDeleted: 0 })
+      plainSummary({
+        changedLines: 0,
+        inserted: 0,
+        deleted: 0,
+        modified: 0,
+        charsAdded: 0,
+        charsDeleted: 0
+      })
     ).toBe('两文件内容完全一致')
   })
 
   it('为 0 的项被省略', () => {
     expect(
-      plainSummary({ changedLines: 2, inserted: 2, deleted: 0, modified: 0, charsAdded: 5, charsDeleted: 0 })
+      plainSummary({
+        changedLines: 2,
+        inserted: 2,
+        deleted: 0,
+        modified: 0,
+        charsAdded: 5,
+        charsDeleted: 0
+      })
     ).toBe('共 2 处不同：新增 2 行')
   })
 
   it('三类变更齐全时完整罗列', () => {
     expect(
-      plainSummary({ changedLines: 9, inserted: 4, deleted: 3, modified: 2, charsAdded: 10, charsDeleted: 8 })
+      plainSummary({
+        changedLines: 9,
+        inserted: 4,
+        deleted: 3,
+        modified: 2,
+        charsAdded: 10,
+        charsDeleted: 8
+      })
     ).toBe('共 9 处不同：新增 4 行、删除 3 行、修改 2 行')
   })
 })
@@ -188,7 +221,12 @@ describe('plainOptions - 比较选项描述', () => {
 
   it('字符级对比单独描述并遮蔽全部空白类选项', () => {
     expect(
-      plainOptions({ charMode: true, trimWhitespace: true, ignoreAllWhitespace: true, ignoreBlankLines: true })
+      plainOptions({
+        charMode: true,
+        trimWhitespace: true,
+        ignoreAllWhitespace: true,
+        ignoreBlankLines: true
+      })
     ).toBe('字符级对比（忽略全部空白与换行，大内容自动分块计算，预算随规模自适应）')
   })
 

@@ -71,5 +71,10 @@ export function clampBounds(b: Rect, workArea: Rect): Rect {
   const height = Math.min(Math.max(b.height, MIN_HEIGHT), Math.max(workArea.height, MIN_HEIGHT))
   const x = Math.min(Math.max(b.x, workArea.x - width + 60), workArea.x + workArea.width - 60)
   const y = Math.min(Math.max(b.y, workArea.y - height + 60), workArea.y + workArea.height - 60)
-  return { x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) }
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    width: Math.round(width),
+    height: Math.round(height)
+  }
 }

@@ -39,10 +39,18 @@ const asBuffer = (u: Uint8Array): Buffer => u as unknown as Buffer
  */
 export function decodeText(buf: Uint8Array): DecodeResult {
   if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
-    return { text: new TextDecoder().decode(buf.subarray(3)), encoding: 'UTF-8 (BOM)', binary: false }
+    return {
+      text: new TextDecoder().decode(buf.subarray(3)),
+      encoding: 'UTF-8 (BOM)',
+      binary: false
+    }
   }
   if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
-    return { text: iconv.decode(asBuffer(buf.subarray(2)), 'utf16-be'), encoding: 'UTF-16 BE', binary: false }
+    return {
+      text: iconv.decode(asBuffer(buf.subarray(2)), 'utf16-be'),
+      encoding: 'UTF-16 BE',
+      binary: false
+    }
   }
   if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
     return {

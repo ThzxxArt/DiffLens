@@ -25,13 +25,21 @@ export default defineConfig({
       reporter: ['text', 'text-summary'],
       include: ['src/renderer/src/**/*.{ts,tsx}', 'src/main/**/*.ts', 'src/shared/**/*.ts'],
       exclude: [
-        'src/renderer/src/**/*.{test,spec}.{ts,tsx}',
+        // 测试文件本身不计入覆盖率
+        'src/**/*.{test,spec}.{ts,tsx}',
         'src/renderer/src/test/**',
         'src/renderer/src/env.d.ts',
+        // 类型-only 文件无运行时代码
+        'src/renderer/src/app/types.ts',
         // worker 线程入口无法在 jsdom 执行，其调用的 computeDiff 已由 diffEngine 测试覆盖
         'src/renderer/src/diff/diffWorker.ts',
-        // 主进程入口依赖 electron 运行时，无法在 jsdom 测试（窗口/IPC 逻辑随发布人工自测）
+        // 主进程运行时装配：Electron app/window/IPC/fs 无法在 jsdom 执行，
+        // 真实链路由 E2E 覆盖；可纯逻辑化的 fileService 仍保留在覆盖率内
         'src/main/index.ts',
+        'src/main/window.ts',
+        'src/main/appState.ts',
+        'src/main/scanCacheService.ts',
+        'src/main/ipc/**',
         // 解码 worker 线程入口（真实链路由 E2E 编码用例覆盖），其调用的
         // decodeText 已由 decode 测试覆盖
         'src/main/decodeWorker.ts'

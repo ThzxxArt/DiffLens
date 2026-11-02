@@ -1,4 +1,5 @@
 import { useEffect, type ReactElement } from 'react'
+import { ABOUT_INFO } from '../app/aboutInfo'
 import LogoIcon from './LogoIcon'
 
 interface AboutModalProps {
@@ -9,28 +10,12 @@ interface AboutModalProps {
   onCopy: (text: string, label: string) => void
 }
 
-/** 关于弹框的展示信息（应用自有元信息，随版本演进同步维护） */
-export const ABOUT_INFO = {
-  name: 'DiffLens',
-  /** 应用介绍（与 README 首段口径一致） */
-  description:
-    '精美酷炫的开源文本对比桌面应用——行级 + 词级 + 字符级差异定位、文件夹递归对比、快照基线对照，帮助你快速看穿两份文本之间的所有差异。',
-  author: 'ThzxxArt',
-  emails: ['stinanimz@gmail.com', '1440196015@qq.com'],
-  repoUrl: 'https://github.com/ThzxxArt/DiffLens',
-  license: 'MIT License'
-} as const
-
 /**
  * 「关于」弹框：应用介绍、版本、作者、邮箱、开源地址与许可证。
  * 关闭方式与粘贴弹窗同语言：Esc / 点击遮罩 / 右上角关闭按钮；
  * 邮箱与开源地址点击复制到剪贴板（复用主进程剪贴板管线，不引入外部跳转）。
  */
-export default function AboutModal({
-  version,
-  onClose,
-  onCopy
-}: AboutModalProps): ReactElement {
+export default function AboutModal({ version, onClose, onCopy }: AboutModalProps): ReactElement {
   // Esc 关闭
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

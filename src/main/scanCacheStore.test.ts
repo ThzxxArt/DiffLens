@@ -12,7 +12,13 @@ import {
 
 /** 构造一条合法缓存条目 */
 function entry(rel: string, status: ScanCacheEntry['status'] = 'same'): ScanCacheEntry {
-  return { rel, leftFp: { size: 1, mtime: 100 }, rightFp: { size: 1, mtime: 100 }, status, semSame: null }
+  return {
+    rel,
+    leftFp: { size: 1, mtime: 100 },
+    rightFp: { size: 1, mtime: 100 },
+    status,
+    semSame: null
+  }
 }
 
 describe('pairKey - 目录对键归一化', () => {
@@ -73,7 +79,13 @@ describe('parseScanCacheStore - 防御性解析', () => {
             good,
             { rel: 'x', status: 'unknown-status', leftFp: null, rightFp: null, semSame: null },
             { rel: '', status: 'same', leftFp: null, rightFp: null, semSame: null },
-            { rel: 'y', status: 'same', leftFp: { size: 'big', mtime: 1 }, rightFp: null, semSame: null },
+            {
+              rel: 'y',
+              status: 'same',
+              leftFp: { size: 'big', mtime: 1 },
+              rightFp: null,
+              semSame: null
+            },
             { rel: 'z', status: 'same', leftFp: null, rightFp: null, semSame: 'maybe' },
             'garbage'
           ],

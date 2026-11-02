@@ -1,13 +1,15 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import AboutModal, { ABOUT_INFO } from './AboutModal'
+import AboutModal from './AboutModal'
+import { ABOUT_INFO } from '../app/aboutInfo'
 
-function setup(overrides?: { version?: string }): { onClose: ReturnType<typeof vi.fn>; onCopy: ReturnType<typeof vi.fn> } {
+function setup(overrides?: { version?: string }): {
+  onClose: ReturnType<typeof vi.fn>
+  onCopy: ReturnType<typeof vi.fn>
+} {
   const onClose = vi.fn()
   const onCopy = vi.fn()
-  render(
-    <AboutModal version={overrides?.version ?? '0.10.2'} onClose={onClose} onCopy={onCopy} />
-  )
+  render(<AboutModal version={overrides?.version ?? '0.10.2'} onClose={onClose} onCopy={onCopy} />)
   return { onClose, onCopy }
 }
 
@@ -80,9 +82,7 @@ describe('AboutModal - 关闭交互', () => {
   it('卸载后 Esc 监听移除（不再触发 onClose）', () => {
     const onClose = vi.fn()
     const onCopy = vi.fn()
-    const { unmount } = render(
-      <AboutModal version="0.10.2" onClose={onClose} onCopy={onCopy} />
-    )
+    const { unmount } = render(<AboutModal version="0.10.2" onClose={onClose} onCopy={onCopy} />)
     unmount()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).not.toHaveBeenCalled()
