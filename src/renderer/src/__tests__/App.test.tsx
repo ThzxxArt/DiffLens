@@ -592,8 +592,20 @@ describe('App - 仅看差异视图', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/a.txt', name: 'a.txt', text: 'same\ndiff-left\nsame2', encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/b.txt', name: 'b.txt', text: 'same\ndiff-right\nsame2', encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/a.txt',
+              name: 'a.txt',
+              text: 'same\ndiff-left\nsame2',
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/b.txt',
+              name: 'b.txt',
+              text: 'same\ndiff-right\nsame2',
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     const utils = render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -630,8 +642,20 @@ describe('App - 忽略所有空白', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/a.js', name: 'a.js', text: 'const  x  =  1;\nif (x) {\n  doSomething( x )\n}', encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/b.js', name: 'b.js', text: 'const x = 1;\nif(x){\n\tdoSomething(x)\n}', encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/a.js',
+              name: 'a.js',
+              text: 'const  x  =  1;\nif (x) {\n  doSomething( x )\n}',
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/b.js',
+              name: 'b.js',
+              text: 'const x = 1;\nif(x){\n\tdoSomething(x)\n}',
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -776,8 +800,20 @@ describe('App - 字符级对比', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/big.txt', name: 'big.txt', text: 'a'.repeat(25001), encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/big2.txt', name: 'big2.txt', text: 'b'.repeat(25001), encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/big.txt',
+              name: 'big.txt',
+              text: 'a'.repeat(25001),
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/big2.txt',
+              name: 'big2.txt',
+              text: 'b'.repeat(25001),
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -795,8 +831,20 @@ describe('App - 字符级对比', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/p1.txt', name: 'p1.txt', text: `head\ncat\nmid\n${'a'.repeat(25001)}`, encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/p2.txt', name: 'p2.txt', text: `head\ncap\nmid\n${'b'.repeat(25001)}`, encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/p1.txt',
+              name: 'p1.txt',
+              text: `head\ncat\nmid\n${'a'.repeat(25001)}`,
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/p2.txt',
+              name: 'p2.txt',
+              text: `head\ncap\nmid\n${'b'.repeat(25001)}`,
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -817,8 +865,20 @@ describe('App - 字符级对比', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/p1.txt', name: 'p1.txt', text: `head\ncat\nmid\n${'a'.repeat(25001)}`, encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/p2.txt', name: 'p2.txt', text: `head\ncap\nmid\n${'b'.repeat(25001)}`, encoding: 'UTF-8', binary: false },
+          ? {
+              path: '/tmp/p1.txt',
+              name: 'p1.txt',
+              text: `head\ncat\nmid\n${'a'.repeat(25001)}`,
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/p2.txt',
+              name: 'p2.txt',
+              text: `head\ncap\nmid\n${'b'.repeat(25001)}`,
+              encoding: 'UTF-8',
+              binary: false
+            },
       saveReport: async (content: string) => {
         saved = content
         return { ok: true, path: 'C:/docs/r.txt' }
@@ -834,7 +894,9 @@ describe('App - 字符级对比', () => {
     fireEvent.click(screen.getByText('导出报告'))
     fireEvent.click(screen.getByText('纯文本'))
     await screen.findByText(/报告已保存/)
-    expect(saved).toContain('比较选项：字符级对比（忽略全部空白与换行；部分差异过大的块按行级对比）')
+    expect(saved).toContain(
+      '比较选项：字符级对比（忽略全部空白与换行；部分差异过大的块按行级对比）'
+    )
   })
 
   it('大文件仅局部差异：字符级分块完成，不降级且精确定位差异', async () => {
@@ -846,8 +908,20 @@ describe('App - 字符级对比', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/a.txt', name: 'a.txt', text: base.join('\n'), encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/b.txt', name: 'b.txt', text: modified.join('\n'), encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/a.txt',
+              name: 'a.txt',
+              text: base.join('\n'),
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/b.txt',
+              name: 'b.txt',
+              text: modified.join('\n'),
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -885,7 +959,9 @@ describe('App - 字符级对比', () => {
     fireEvent.click(screen.getByText('导出报告'))
     fireEvent.click(screen.getByText('纯文本'))
     await screen.findByText(/报告已保存/)
-    expect(saved).toContain('比较选项：字符级对比（忽略全部空白与换行，大内容自动分块计算，预算随规模自适应）')
+    expect(saved).toContain(
+      '比较选项：字符级对比（忽略全部空白与换行，大内容自动分块计算，预算随规模自适应）'
+    )
   })
 
   it('降级后导出报告按实际生效的行级语义描述选项', async () => {
@@ -894,8 +970,20 @@ describe('App - 字符级对比', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/big.txt', name: 'big.txt', text: 'a'.repeat(25001), encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/b.txt', name: 'b.txt', text: 'b'.repeat(25001), encoding: 'UTF-8', binary: false },
+          ? {
+              path: '/tmp/big.txt',
+              name: 'big.txt',
+              text: 'a'.repeat(25001),
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/b.txt',
+              name: 'b.txt',
+              text: 'b'.repeat(25001),
+              encoding: 'UTF-8',
+              binary: false
+            },
       saveReport: async (content: string) => {
         saved = content
         return { ok: true, path: 'C:/docs/r.txt' }
@@ -936,8 +1024,7 @@ describe('App - 单文件视图搜索', () => {
     await screen.findAllByText('两文件内容完全一致')
   }
 
-  const searchInput = (): HTMLElement =>
-    screen.getByPlaceholderText('搜索内容… (Ctrl+F)')
+  const searchInput = (): HTMLElement => screen.getByPlaceholderText('搜索内容… (Ctrl+F)')
 
   it('输入关键字：命中计数显示且第一个命中行定位高亮', async () => {
     await loadSearchFixture()
@@ -981,9 +1068,7 @@ describe('App - 单文件视图搜索', () => {
     await loadSearchFixture()
     fireEvent.change(searchInput(), { target: { value: 'zzz' } })
     // 两侧完全一致时差异导航计数同为 0 / 0，用 selector 限定搜索计数
-    expect(
-      await screen.findByText('0 / 0', { selector: '.search-count' })
-    ).toBeInTheDocument()
+    expect(await screen.findByText('0 / 0', { selector: '.search-count' })).toBeInTheDocument()
     fireEvent.keyDown(searchInput(), { key: 'Enter' })
     expect(screen.getByText('0 / 0', { selector: '.search-count' })).toBeInTheDocument()
   })
@@ -1042,8 +1127,20 @@ describe('App - 单文件视图搜索', () => {
       openFile: async () => {
         openCall++
         return openCall === 1
-          ? { path: '/tmp/a.txt', name: 'a.txt', text: 'find here', encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/a2.txt', name: 'a2.txt', text: 'plain stuff', encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/a.txt',
+              name: 'a.txt',
+              text: 'find here',
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/a2.txt',
+              name: 'a2.txt',
+              text: 'plain stuff',
+              encoding: 'UTF-8',
+              binary: false
+            }
       }
     })
     render(<App />)
@@ -1053,16 +1150,14 @@ describe('App - 单文件视图搜索', () => {
     await screen.findByText('有差异')
     // 左侧 'find here' 命中一处（与差异导航计数区分，selector 限定搜索计数）
     fireEvent.change(searchInput(), { target: { value: 'find' } })
-    expect(
-      await screen.findByText('1 / 1', { selector: '.search-count' })
-    ).toBeInTheDocument()
+    expect(await screen.findByText('1 / 1', { selector: '.search-count' })).toBeInTheDocument()
     expect(document.querySelectorAll('.diff-row.active').length).toBeGreaterThan(0)
     // 重新选择左侧（新内容不含关键字）：diff 重算后命中归零，高亮随之清空
     fireEvent.click(screen.getAllByText('重新选择')[0])
-    await waitFor(() =>
+    await waitFor(() => {
       expect(screen.getByText('0 / 0', { selector: '.search-count' })).toBeInTheDocument()
-    )
-    expect(document.querySelectorAll('.diff-row.active')).toHaveLength(0)
+      expect(document.querySelectorAll('.diff-row.active')).toHaveLength(0)
+    })
   })
 })
 
@@ -1073,7 +1168,8 @@ describe('App - 状态栏行数', () => {
     const { container } = render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
     await screen.findByText('导出报告')
-    const items = () => Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
+    const items = () =>
+      Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
     // mockApi 默认返回 'line1\nline2' = 2 行；右侧未加载无行数
     expect(items()[0]).toMatch(/左：\s*a\.txt\s*·\s*2 行/)
     expect(items()[1]).toMatch(/右：\s*—$/)
@@ -1091,7 +1187,8 @@ describe('App - 状态栏行数', () => {
     await screen.findByText('导出报告')
     fireEvent.click(screen.getByText('打开右侧'))
     await screen.findAllByText('b.txt')
-    const items = () => Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
+    const items = () =>
+      Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
     expect(items()[0]).toMatch(/左：\s*a\.txt\s*·\s*3 行/)
     expect(items()[1]).toMatch(/右：\s*b\.txt\s*·\s*2 行/)
   })
@@ -1100,7 +1197,8 @@ describe('App - 状态栏行数', () => {
     const { container } = render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
     await screen.findByText('导出报告')
-    const items = () => Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
+    const items = () =>
+      Array.from(container.querySelectorAll('.status-item'), (e) => e.textContent ?? '')
     expect(items()[0]).toMatch(/左：\s*a\.txt\s*·\s*2 行/)
     fireEvent.click(screen.getByText('清空'))
     await screen.findByText(/再次点击/)
@@ -1123,7 +1221,8 @@ describe('App - 交换左右侧', () => {
     await screen.findByText('导出报告')
     fireEvent.click(screen.getByText('打开右侧'))
     await screen.findAllByText('b.txt')
-    const files = () => Array.from(container.querySelectorAll('.pane-file')).map((e) => e.textContent)
+    const files = () =>
+      Array.from(container.querySelectorAll('.pane-file')).map((e) => e.textContent)
     expect(files()).toEqual(['a.txt', 'b.txt'])
     fireEvent.click(screen.getByText('⇄ 交换左右'))
     expect(files()).toEqual(['b.txt', 'a.txt'])
@@ -1150,8 +1249,20 @@ describe('App - 偏好持久化（比较选项 + 仅看差异）', () => {
     window.api = mockApi({
       openFile: async (side) =>
         side === 'left'
-          ? { path: '/tmp/a.txt', name: 'a.txt', text: 'same\ndiffL', encoding: 'UTF-8', binary: false }
-          : { path: '/tmp/b.txt', name: 'b.txt', text: 'same\ndiffR', encoding: 'UTF-8', binary: false }
+          ? {
+              path: '/tmp/a.txt',
+              name: 'a.txt',
+              text: 'same\ndiffL',
+              encoding: 'UTF-8',
+              binary: false
+            }
+          : {
+              path: '/tmp/b.txt',
+              name: 'b.txt',
+              text: 'same\ndiffR',
+              encoding: 'UTF-8',
+              binary: false
+            }
     })
     render(<App />)
     fireEvent.click(screen.getByText('打开左侧'))
@@ -1455,7 +1566,14 @@ describe('App - 文件夹模式搜索与换目录状态重置（0.10.5）', () =
       scanFolder: async () => {
         // 第二轮（重新选择后的新目录对）返回含 x.md 的结果供断言（different 在仅看差异下可见）
         return pick >= 3
-          ? { entries: [...entries, { rel: 'x.md', status: 'different' as const, leftSize: 1, rightSize: 2 }], truncated: false, total: 4 }
+          ? {
+              entries: [
+                ...entries,
+                { rel: 'x.md', status: 'different' as const, leftSize: 1, rightSize: 2 }
+              ],
+              truncated: false,
+              total: 4
+            }
           : { entries, truncated: false, total: 3 }
       }
     })
@@ -1617,7 +1735,9 @@ describe('App - 文件夹语义判等', () => {
       const saved = JSON.parse(window.localStorage.getItem('difflens.prefs.v1') ?? '{}')
       expect(saved.folderSemantic).toBe(false)
     })
-    expect(JSON.parse(window.localStorage.getItem('difflens.prefs.v1') ?? '{}').folderOnlyDiff).toBe(true)
+    expect(
+      JSON.parse(window.localStorage.getItem('difflens.prefs.v1') ?? '{}').folderOnlyDiff
+    ).toBe(true)
   })
 
   it('导出文件夹报告：内容落盘携带目录与结论，成功提示可打开文件夹', async () => {
@@ -1741,7 +1861,9 @@ describe('App - 差异文件导航', () => {
     // Alt+↓ 再前进（d 为仅右条目：右侧面板装载）
     fireEvent.keyDown(window, { key: 'ArrowDown', altKey: true })
     await waitFor(() =>
-      expect(Array.from(document.querySelectorAll('.pane-file')).map((e) => e.textContent)[1]).toBe('d.txt')
+      expect(Array.from(document.querySelectorAll('.pane-file')).map((e) => e.textContent)[1]).toBe(
+        'd.txt'
+      )
     )
     expect(screen.getByText('3 / 3')).toBeInTheDocument()
   })
@@ -1989,7 +2111,9 @@ describe('App - 忽略规则', () => {
   ]
 
   /** 进入文件夹模式，记录 scanFolder 全部调用参数（含忽略规则） */
-  async function enterWithIgnore(calls: Array<{ l: string; r: string; s: boolean; p: unknown; ig: unknown }>) {
+  async function enterWithIgnore(
+    calls: Array<{ l: string; r: string; s: boolean; p: unknown; ig: unknown }>
+  ) {
     const dirs = ['C:/left-dir', 'D:/right-dir']
     let call = 0
     window.api = mockApi({
@@ -2232,9 +2356,7 @@ describe('App - 快照基线', () => {
   })
 
   it('快照目录对与当前不一致：拦截提示且不进入对照', async () => {
-    await enterForSnapshot(
-      makeSnapJson({ leftDir: 'C:/other-left', rightDir: 'D:/right-dir' })
-    )
+    await enterForSnapshot(makeSnapJson({ leftDir: 'C:/other-left', rightDir: 'D:/right-dir' }))
     fireEvent.click(screen.getByRole('button', { name: '快照' }))
     fireEvent.click(screen.getByText('加载快照…'))
     expect(await screen.findByText(/快照的对比目录与当前不一致/)).toBeInTheDocument()
@@ -2400,8 +2522,18 @@ describe('App - 快照基线', () => {
 describe('App - 快照内容级对照（v2）', () => {
   /** 进入文件夹模式并保存快照的公共流程（返回落盘内容捕获器） */
   async function enterAndSave(
-    entries: Array<{ rel: string; status: 'same' | 'different' | 'left-only' | 'right-only'; leftSize: number | null; rightSize: number | null }>,
-    readFiles: (paths: string[]) => Array<{ path: string; name: string; text: string; encoding: string; binary: boolean } | { error: 'read-failed'; name: string }>,
+    entries: Array<{
+      rel: string
+      status: 'same' | 'different' | 'left-only' | 'right-only'
+      leftSize: number | null
+      rightSize: number | null
+    }>,
+    readFiles: (
+      paths: string[]
+    ) => Array<
+      | { path: string; name: string; text: string; encoding: string; binary: boolean }
+      | { error: 'read-failed'; name: string }
+    >,
     saveContent: { get: () => string }
   ): Promise<void> {
     const dirs = ['C:/left-dir', 'D:/right-dir']
@@ -2545,9 +2677,7 @@ describe('App - 快照内容级对照（v2）', () => {
     fireEvent.dblClick(screen.getByText('b.txt'))
     // 左面板：快照基线内容（面板头标注"快照 · b.txt"），右面板：当前左侧文件（跟踪左文件优先）
     // 注：状态栏也含同名文本，用 selector 限定面板头
-    expect(
-      await screen.findByText('快照 · b.txt', { selector: '.pane-file' })
-    ).toBeInTheDocument()
+    expect(await screen.findByText('快照 · b.txt', { selector: '.pane-file' })).toBeInTheDocument()
     expect(screen.getByText('baseline', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('current', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('有差异')).toBeInTheDocument()
@@ -2708,9 +2838,7 @@ describe('App - 快照内容级对照（v2）', () => {
     // 对照列表：b.txt 为已修复（默认隐藏 stable 的 a.txt）
     fireEvent.dblClick(screen.getByText('b.txt'))
     // 进入内容对照：左面板快照基线、右面板当前文件（缺陷版本此处导航显示"—"）
-    expect(
-      await screen.findByText('快照 · b.txt', { selector: '.pane-file' })
-    ).toBeInTheDocument()
+    expect(await screen.findByText('快照 · b.txt', { selector: '.pane-file' })).toBeInTheDocument()
     expect(screen.getByText('有差异')).toBeInTheDocument()
     expect(screen.queryByText(/差异文件/)).not.toBeInTheDocument()
   })
@@ -2859,9 +2987,7 @@ describe('App - 扫描进度反馈', () => {
     await act(async () => {
       resolveScan({ entries: [], truncated: false, total: 0 })
     })
-    await waitFor(() =>
-      expect(screen.queryByText(/正在扫描文件夹/)).not.toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.queryByText(/正在扫描文件夹/)).not.toBeInTheDocument())
     expect(screen.queryByText(/已比对/)).not.toBeInTheDocument()
   })
 })
@@ -2880,9 +3006,7 @@ describe('App - 关于弹框（0.10.2）', () => {
     expect(screen.getByText('MIT License')).toBeInTheDocument()
     // Esc 关闭
     fireEvent.keyDown(document, { key: 'Escape' })
-    await waitFor(() =>
-      expect(screen.queryByText('版本 9.9.9-test')).not.toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.queryByText('版本 9.9.9-test')).not.toBeInTheDocument())
   })
 
   it('点击邮箱复制到剪贴板并 toast 反馈', async () => {

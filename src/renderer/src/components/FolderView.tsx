@@ -36,7 +36,7 @@ export interface FolderViewProps {
   /** 快照保存中（批量读取差异条目内容期间）：保存/加载快照入口禁用（保存遮罩不拦截交互，按钮级防抖） */
   saving?: boolean
   /** Ctrl+F 聚焦用：文件名搜索输入框 ref（App 持有并转发到 input；缺省时内部自持供清空按钮聚焦） */
-  searchInputRef?: RefObject<HTMLInputElement>
+  searchInputRef?: RefObject<HTMLInputElement | null>
   /** 比对进度（主进程推送；null = 尚无进度态，仅扫描中遮罩展示） */
   progress?: { done: number; total: number } | null
   /** 仅看差异（隐藏两侧一致的文件）；与状态过滤互斥（后者开启时本开关自动关闭） */
@@ -89,7 +89,11 @@ const STATUS_META: Record<FolderEntryStatus, { icon: string; label: string; cls:
 }
 
 /** 状态过滤徽章与统计的展示配置（顺序即渲染顺序） */
-const BADGES: { status: FolderEntryStatus; countKey: keyof ReturnType<typeof countFolderStats>; text: string }[] = [
+const BADGES: {
+  status: FolderEntryStatus
+  countKey: keyof ReturnType<typeof countFolderStats>
+  text: string
+}[] = [
   { status: 'same', countKey: 'same', text: '相同' },
   { status: 'semantic-same', countKey: 'semanticSame', text: '语义同' },
   { status: 'different', countKey: 'different', text: '不同' },
@@ -234,8 +238,7 @@ export default function FolderView({
     const tree = buildFolderTree(filtered)
     const q = query.trim()
     // 搜索激活时强制全部展开（命中路径完整可见）；清空搜索恢复用户折叠状态
-    const isExpanded = (dirPath: string): boolean =>
-      q !== '' ? true : !collapsedDirs.has(dirPath)
+    const isExpanded = (dirPath: string): boolean => (q !== '' ? true : !collapsedDirs.has(dirPath))
     return flattenFolderTree(tree, isExpanded)
   }, [entries, onlyDiff, statusFilter, query, extFilter, collapsedDirs])
 
@@ -362,7 +365,9 @@ export default function FolderView({
           <button
             className="btn ghost"
             disabled={scanning}
-            title={scanning ? '正在扫描文件夹' : '重新扫描当前两个目录（增量：未变更的文件直接沿用判定）'}
+            title={
+              scanning ? '正在扫描文件夹' : '重新扫描当前两个目录（增量：未变更的文件直接沿用判定）'
+            }
             onClick={onRescan}
           >
             重新扫描
@@ -483,7 +488,11 @@ export default function FolderView({
               )
             })}
             <span className="fstat muted" title="对照条目总数（快照与当前结果的并集）">
-              共 {snapList !== null ? `${snapList.length} / ${snapshotDiff.entries.length}` : snapshotDiff.entries.length} 项
+              共{' '}
+              {snapList !== null
+                ? `${snapList.length} / ${snapshotDiff.entries.length}`
+                : snapshotDiff.entries.length}{' '}
+              项
             </span>
           </div>
           <span className="fstat muted" title="快照基线的保存时间与判定口径">
@@ -550,7 +559,11 @@ export default function FolderView({
               )
             })}
             <span className="fstat muted" title="条目总数（扩展名/状态过滤不影响统计徽章口径）">
-              共 {extFilter !== null || statusFilter !== null ? `${filteredCount} / ${entries.length}` : entries.length} 项
+              共{' '}
+              {extFilter !== null || statusFilter !== null
+                ? `${filteredCount} / ${entries.length}`
+                : entries.length}{' '}
+              项
             </span>
           </div>
           <div className="export-wrap" ref={extWrapRef}>
@@ -569,7 +582,11 @@ export default function FolderView({
                     <button
                       key={ext}
                       className={'ctx-item' + (on ? ' active' : '')}
-                      title={on ? `点击取消“${ext === '' ? '无扩展名' : '.' + ext}”过滤` : `点击只看“${ext === '' ? '无扩展名' : '.' + ext}”的文件`}
+                      title={
+                        on
+                          ? `点击取消“${ext === '' ? '无扩展名' : '.' + ext}”过滤`
+                          : `点击只看“${ext === '' ? '无扩展名' : '.' + ext}”的文件`
+                      }
                       onClick={() => handleExtToggle(ext)}
                     >
                       {ext === '' ? '（无扩展名）' : `.${ext}`}
@@ -703,7 +720,8 @@ export default function FolderView({
                 const hasContents =
                   e.current !== null &&
                   snapshot?.contents?.[e.rel] !== undefined &&
-                  (snapshot.contents[e.rel].left !== null || snapshot.contents[e.rel].right !== null)
+                  (snapshot.contents[e.rel].left !== null ||
+                    snapshot.contents[e.rel].right !== null)
                 return (
                   <div
                     className={'folder-row ' + meta.cls}

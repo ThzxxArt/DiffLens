@@ -1,11 +1,26 @@
 import { join, dirname, sep } from 'path'
-import { app, shell, BrowserWindow, Menu, ipcMain, dialog, clipboard, nativeTheme, screen } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+  dialog,
+  clipboard,
+  nativeTheme,
+  screen
+} from 'electron'
 import { Worker } from 'worker_threads'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
 import { parseState, clampBounds, type AppState } from './windowState'
 import { decodeText, type DecodeResult } from './decode'
-import { scanFolders, SEMANTIC_MAX_BYTES, SCAN_CONCURRENCY, type ScanCacheEntry } from './folderScan'
+import {
+  scanFolders,
+  SEMANTIC_MAX_BYTES,
+  SCAN_CONCURRENCY,
+  type ScanCacheEntry
+} from './folderScan'
 import { resolveScanArgs } from './scanIpc'
 import {
   parseScanCacheStore,

@@ -41,7 +41,7 @@ interface ToolbarProps {
   /** 命中行之间跳转（1 下一个 / -1 上一个，循环） */
   onSearchNav: (dir: 1 | -1) => void
   /** Ctrl+F 聚焦用：搜索输入框 ref（App 持有并转发到 input） */
-  searchInputRef: RefObject<HTMLInputElement>
+  searchInputRef: RefObject<HTMLInputElement | null>
   /** Patch（unified diff）是否可从当前结果生成：判等选项污染 unchanged 行时为 false（菜单项禁用） */
   canPatch?: boolean
 }
@@ -165,7 +165,10 @@ export default function Toolbar({
           />
           字符级对比
           {options.charMode && charModeDowngraded && (
-            <span className="opt-badge warn" title="内容或差异过大，本次对比已自动降级为行级（忽略所有空白 + 忽略空行语义）">
+            <span
+              className="opt-badge warn"
+              title="内容或差异过大，本次对比已自动降级为行级（忽略所有空白 + 忽略空行语义）"
+            >
               已降级
             </span>
           )}
@@ -232,7 +235,9 @@ export default function Toolbar({
           )}
         </div>
         <span className="search-count">
-          {searchQuery.trim() === '' ? '' : `${searchCount > 0 ? searchIndex + 1 : 0} / ${searchCount}`}
+          {searchQuery.trim() === ''
+            ? ''
+            : `${searchCount > 0 ? searchIndex + 1 : 0} / ${searchCount}`}
         </span>
       </div>
 

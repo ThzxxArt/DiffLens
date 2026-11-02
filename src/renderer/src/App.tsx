@@ -104,7 +104,7 @@ function loadPrefs(): Prefs {
     folderSemantic: true,
     folderIgnoreRules: []
   }
-  let raw: string | null = null
+  let raw: string | null
   try {
     raw = window.localStorage.getItem(PREFS_KEY)
   } catch {
@@ -237,7 +237,9 @@ export default function App(): ReactElement {
   // 文件夹模式的「语义判等」：字节不同但剔除空白后一致计为语义同（默认开，消除换行符误报）
   const [folderSemantic, setFolderSemantic] = useState<boolean>(initialPrefs.folderSemantic)
   // 文件夹扫描的忽略规则（gitignore 简化子集；随偏好持久化，应用后触发重扫）
-  const [folderIgnoreRules, setFolderIgnoreRules] = useState<string[]>(initialPrefs.folderIgnoreRules)
+  const [folderIgnoreRules, setFolderIgnoreRules] = useState<string[]>(
+    initialPrefs.folderIgnoreRules
+  )
   // 快照基线与对照结果（null = 非对照模式；加载快照后列表按状态变迁标注）
   const [snapshot, setSnapshot] = useState<FolderSnapshot | null>(null)
   const [snapshotDiff, setSnapshotDiff] = useState<SnapshotDiffResult | null>(null)
@@ -284,22 +286,19 @@ export default function App(): ReactElement {
   const toastSeq = useRef(0)
   const toastTimers = useRef(new Map<number, number>())
 
-  const showToast = useCallback(
-    (text: string, action?: { label: string; onClick: () => void }) => {
-      const id = ++toastSeq.current
-      setToasts((prev) => {
-        const next = [...prev, { id, text, action }]
-        // 超出上限时顶掉最旧的一条（其定时器到期后空过滤，无副作用）
-        return next.length > TOAST_MAX ? next.slice(next.length - TOAST_MAX) : next
-      })
-      const timer = window.setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id))
-        toastTimers.current.delete(id)
-      }, 3600)
-      toastTimers.current.set(id, timer)
-    },
-    []
-  )
+  const showToast = useCallback((text: string, action?: { label: string; onClick: () => void }) => {
+    const id = ++toastSeq.current
+    setToasts((prev) => {
+      const next = [...prev, { id, text, action }]
+      // 超出上限时顶掉最旧的一条（其定时器到期后空过滤，无副作用）
+      return next.length > TOAST_MAX ? next.slice(next.length - TOAST_MAX) : next
+    })
+    const timer = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+      toastTimers.current.delete(id)
+    }, 3600)
+    toastTimers.current.set(id, timer)
+  }, [])
 
   const dismissToast = useCallback((id: number): void => {
     const timer = toastTimers.current.get(id)
@@ -335,7 +334,8 @@ export default function App(): ReactElement {
   const warnHeavyLines = useCallback(
     (text: string): void => {
       const lines = countLines(text)
-      if (lines > HEAVY_LINES) showToast(`行数较多（${lines} 行），差异将在后台计算，可能需要一些时间`)
+      if (lines > HEAVY_LINES)
+        showToast(`行数较多（${lines} 行），差异将在后台计算，可能需要一些时间`)
     },
     [showToast]
   )
@@ -396,7 +396,7 @@ export default function App(): ReactElement {
         showToast(`文件超过 10MB，暂不支持对比：${file.name}`)
         return
       }
-      let text = ''
+      let text: string
       let encoding = 'UTF-8'
       let binary = false
       try {
@@ -444,7 +444,12 @@ export default function App(): ReactElement {
    *  语义判等开关切换触发的重扫从全量 IO 变为近乎零 IO；
    *  未携带缓存时（跨会话首次扫描）主进程自动注入 userData 落盘的持久化缓存 */
   const runFolderScan = useCallback(
-    async (leftDir: string, rightDir: string, semantic: boolean, ignoreRules: string[]): Promise<void> => {
+    async (
+      leftDir: string,
+      rightDir: string,
+      semantic: boolean,
+      ignoreRules: string[]
+    ): Promise<void> => {
       const seq = ++scanSeqRef.current
       setFolderScanning(true)
       setScanProgress(null)
@@ -483,15 +488,16 @@ export default function App(): ReactElement {
   // 订阅主进程扫描进度推送：仅显示与当前会话序号一致的事件（旧扫描迟到进度天然丢弃）
   useEffect(() => {
     const off = window.api.onScanProgress((data) => {
-      if (data.scanId === scanSeqRef.current) setScanProgress({ done: data.done, total: data.total })
+      if (data.scanId === scanSeqRef.current)
+        setScanProgress({ done: data.done, total: data.total })
     })
     return off
   }, [])
 
   /** 入口：连续选择左右两个文件夹后开始对比 */
   const startFolderCompare = useCallback(async (): Promise<void> => {
-    let leftDir: string | null = null
-    let rightDir: string | null = null
+    let leftDir: string | null
+    let rightDir: string | null
     try {
       leftDir = await window.api.pickFolder()
       if (!leftDir) return
@@ -612,7 +618,9 @@ export default function App(): ReactElement {
           // 每批完成更新读取进度（文件数口径，去重后的双侧路径总数）
           const allPaths = [
             ...new Set(
-              targets.flatMap((t) => [t.leftPath, t.rightPath].filter((p): p is string => p !== null))
+              targets.flatMap((t) =>
+                [t.leftPath, t.rightPath].filter((p): p is string => p !== null)
+              )
             )
           ]
           const readMap = new Map<string, string>()
@@ -819,7 +827,10 @@ export default function App(): ReactElement {
       // ===== 快照内容对照：对照模式且快照 v2 含该条目基线内容（双侧均为 null 时走常规双击） =====
       const snapContents =
         snapshot !== null && snapshotDiff !== null ? snapshot.contents?.[entry.rel] : undefined
-      if (snapContents !== undefined && (snapContents.left !== null || snapContents.right !== null)) {
+      if (
+        snapContents !== undefined &&
+        (snapContents.left !== null || snapContents.right !== null)
+      ) {
         // 跟踪侧选择：优先"基线有内容且当前也存在"的一侧；兜底跟基线存在侧（当前侧空面板展示基线 vs 已删除）
         const baseSide: 'left' | 'right' =
           snapContents.left !== null && entry.status !== 'right-only'
@@ -845,7 +856,7 @@ export default function App(): ReactElement {
         const curExists =
           baseSide === 'left' ? entry.status !== 'right-only' : entry.status !== 'left-only'
         const curPath = curExists
-          ? `${(baseSide === 'left' ? folderState.leftDir : folderState.rightDir)}/${entry.rel}`
+          ? `${baseSide === 'left' ? folderState.leftDir : folderState.rightDir}/${entry.rel}`
           : null
         const okCur = await loadSide('right', curPath)
         if (baseText !== null || okCur) {
@@ -887,9 +898,7 @@ export default function App(): ReactElement {
   const openDirScope = useCallback(
     (dirPath: string): void => {
       if (!folderState) return
-      const inScope = diffFileEntries.filter((e) =>
-        e.rel.startsWith(dirPath + '/')
-      )
+      const inScope = diffFileEntries.filter((e) => e.rel.startsWith(dirPath + '/'))
       if (inScope.length === 0) {
         showToast(`目录「${dirPath}」内没有差异文件`)
         return
@@ -915,9 +924,7 @@ export default function App(): ReactElement {
   // 双击 fixed/regressed/new 等当前无差异的条目——导航组随之隐藏，避免显示"—"计数
   // 与可点但无响应的按钮；双击差异条目即回到序列、导航恢复）
   const cursorIdx =
-    folderEntryCursor === null
-      ? -1
-      : diffFileEntries.findIndex((e) => e.rel === folderEntryCursor)
+    folderEntryCursor === null ? -1 : diffFileEntries.findIndex((e) => e.rel === folderEntryCursor)
 
   /** 从单文件对比返回文件夹列表（清空两侧面板与导航游标/聚合范围，文件夹扫描结果保留） */
   const backToFolder = useCallback((): void => {
@@ -1021,10 +1028,17 @@ export default function App(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
-  // diff 重算（切选项/交换/新文件）导致命中集变化：序号钳制回有效范围
+  // diff 重算（切选项/交换/新文件）导致命中集变化：序号钳制回有效范围；
+  // 搜索仍激活但命中归零时同步清空 active 高亮（React 19 effect 时序变化暴露的回归锚）
   useEffect(() => {
     setSearchIndex((i) => Math.min(i, Math.max(0, searchHits.length - 1)))
-  }, [searchHits])
+    if (searchQuery.trim() !== '' && searchHits.length === 0) setActiveRowId(null)
+  }, [searchHits, searchQuery])
+
+  // 搜索激活但命中归零时，active 行不应继续高亮（状态清空 effect 之外的渲染态兜底；
+  // React 19 下 effect 在 paint 后执行，避免一帧残留旧高亮）
+  const effectiveActiveRowId =
+    searchQuery.trim() !== '' && searchHits.length === 0 ? null : activeRowId
 
   /** 命中行之间循环跳转（Enter / Shift+Enter）；目标行被“仅看差异”折叠时提示且不推进 */
   const goSearch = useCallback(
@@ -1107,6 +1121,7 @@ export default function App(): ReactElement {
     setNavIndex(0)
     const ni = Math.min(searchIndex, Math.max(0, searchHits.length - 1))
     setActiveRowId(searchHits.length > 0 ? searchHits[ni].id : null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneL, paneR, options, onlyDiff])
 
   const go = useCallback(
@@ -1194,7 +1209,13 @@ export default function App(): ReactElement {
       // 字符级对比降级时，报告头部按实际生效语义描述：
       // 整体降级按行级语义；部分降级保持字符级语义并标注部分块按行级
       const reportOptions: DiffOptions = diff.charModeDowngraded
-        ? { ...options, charMode: false, ignoreAllWhitespace: true, ignoreBlankLines: true, trimWhitespace: false }
+        ? {
+            ...options,
+            charMode: false,
+            ignoreAllWhitespace: true,
+            ignoreBlankLines: true,
+            trimWhitespace: false
+          }
         : options
       // 快照基线内容对照场景：左侧面板为快照基线（encoding 为 0.10.0 起的既定标记），
       // 报告头部注明数据来源与基线保存时间——脱离应用后仍可辨识
@@ -1208,18 +1229,16 @@ export default function App(): ReactElement {
         leftPath: paneL?.path || undefined,
         rightPath: paneR?.path || undefined,
         options: reportOptions,
-        ...(diff.charModePartial && !diff.charModeDowngraded
-          ? { charModePartial: true }
-          : {}),
+        ...(diff.charModePartial && !diff.charModeDowngraded ? { charModePartial: true } : {}),
         // 生成器版本号（可追溯）与原始文本行数（忽略空行开启时 rows 统计偏小）
         ...(appVersion !== '' ? { version: appVersion } : {}),
         ...(leftLines > 0 ? { leftLines } : {}),
         ...(rightLines > 0 ? { rightLines } : {}),
         ...(isSnapshotCompare
           ? {
-              compareNote: `左侧为快照基线（保存于 ${new Date(
-                snapshot!.savedAt
-              ).toLocaleString('zh-CN')}），右侧为当前文件`
+              compareNote: `左侧为快照基线（保存于 ${new Date(snapshot!.savedAt).toLocaleString(
+                'zh-CN'
+              )}），右侧为当前文件`
             }
           : {})
       }
@@ -1251,7 +1270,20 @@ export default function App(): ReactElement {
         })
       }
     },
-    [diff, rows, paneL, paneR, summary, options, showToast, canPatch, appVersion, leftLines, rightLines, snapshot]
+    [
+      diff,
+      rows,
+      paneL,
+      paneR,
+      summary,
+      options,
+      showToast,
+      canPatch,
+      appVersion,
+      leftLines,
+      rightLines,
+      snapshot
+    ]
   )
 
   const anyPane = paneL !== null || paneR !== null
@@ -1296,7 +1328,11 @@ export default function App(): ReactElement {
         {mode === 'file' && (
           <>
             {folderState && (
-              <button className="btn ghost" onClick={backToFolder} title="返回文件夹列表（扫描结果保留）">
+              <button
+                className="btn ghost"
+                onClick={backToFolder}
+                title="返回文件夹列表（扫描结果保留）"
+              >
                 ← 返回文件夹对比
               </button>
             )}
@@ -1373,7 +1409,11 @@ export default function App(): ReactElement {
             <button className="btn ghost" onClick={handleClear}>
               清空
             </button>
-            <button className="btn ghost" onClick={() => void startFolderCompare()} title="选择两个文件夹，对比全部文件差异">
+            <button
+              className="btn ghost"
+              onClick={() => void startFolderCompare()}
+              title="选择两个文件夹，对比全部文件差异"
+            >
               对比文件夹
             </button>
           </>
@@ -1386,7 +1426,15 @@ export default function App(): ReactElement {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
             <circle cx="12" cy="7.6" r="1.35" fill="currentColor" />
-            <line x1="12" y1="10.6" x2="12" y2="17" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+            <line
+              x1="12"
+              y1="10.6"
+              x2="12"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
       </header>
@@ -1434,7 +1482,7 @@ export default function App(): ReactElement {
             items={displayRows}
             leftMeta={leftMeta}
             rightMeta={rightMeta}
-            activeRowId={activeRowId}
+            activeRowId={effectiveActiveRowId}
             searchQuery={searchQuery.trim()}
             onOpen={(s) => void openPane(s)}
             onRowContext={onRowContext}
@@ -1468,8 +1516,16 @@ export default function App(): ReactElement {
         </>
       ) : (
         <div className="diff-main">
-          <EmptyPane side="left" onOpen={(s) => void openPane(s)} onDrop={(s, f) => void dropPane(s, f)} />
-          <EmptyPane side="right" onOpen={(s) => void openPane(s)} onDrop={(s, f) => void dropPane(s, f)} />
+          <EmptyPane
+            side="left"
+            onOpen={(s) => void openPane(s)}
+            onDrop={(s, f) => void dropPane(s, f)}
+          />
+          <EmptyPane
+            side="right"
+            onOpen={(s) => void openPane(s)}
+            onDrop={(s, f) => void dropPane(s, f)}
+          />
         </div>
       )}
 
@@ -1537,7 +1593,9 @@ export default function App(): ReactElement {
         </div>
       )}
 
-      {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
+      {menu && (
+        <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />
+      )}
       {aboutOpen && (
         <AboutModal
           version={appVersion}

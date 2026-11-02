@@ -9,11 +9,7 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn()
 })
 
-function renderDiff(
-  items: DisplayItem[],
-  activeRowId: string | null = null,
-  searchQuery?: string
-) {
+function renderDiff(items: DisplayItem[], activeRowId: string | null = null, searchQuery?: string) {
   return render(
     <DiffView
       items={items}
@@ -305,7 +301,11 @@ describe('DiffView - 折叠提示行', () => {
   })
 
   it('自定义文案（完全一致场景）覆盖默认提示', () => {
-    const m: FoldMarker = { fold: true, skipped: 10, note: '两文件内容完全一致，已折叠全部未更改行' }
+    const m: FoldMarker = {
+      fold: true,
+      skipped: 10,
+      note: '两文件内容完全一致，已折叠全部未更改行'
+    }
     renderDiff([m])
     expect(screen.getAllByText('两文件内容完全一致，已折叠全部未更改行').length).toBe(2)
   })

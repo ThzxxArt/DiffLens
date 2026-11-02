@@ -102,31 +102,61 @@ describe('Toolbar', () => {
   it('切换忽略大小写触发 onOptionsChange', () => {
     const { onOptionsChange } = setup()
     fireEvent.click(screen.getByLabelText('忽略大小写'))
-    expect(onOptionsChange).toHaveBeenCalledWith({ trimWhitespace: false, ignoreCase: true, ignoreBlankLines: false, ignoreAllWhitespace: false, charMode: false })
+    expect(onOptionsChange).toHaveBeenCalledWith({
+      trimWhitespace: false,
+      ignoreCase: true,
+      ignoreBlankLines: false,
+      ignoreAllWhitespace: false,
+      charMode: false
+    })
   })
 
   it('切换忽略行首尾空白触发 onOptionsChange', () => {
     const { onOptionsChange } = setup()
     fireEvent.click(screen.getByLabelText('忽略行首尾空白'))
-    expect(onOptionsChange).toHaveBeenCalledWith({ trimWhitespace: true, ignoreCase: false, ignoreBlankLines: false, ignoreAllWhitespace: false, charMode: false })
+    expect(onOptionsChange).toHaveBeenCalledWith({
+      trimWhitespace: true,
+      ignoreCase: false,
+      ignoreBlankLines: false,
+      ignoreAllWhitespace: false,
+      charMode: false
+    })
   })
 
   it('切换忽略空行触发 onOptionsChange', () => {
     const { onOptionsChange } = setup()
     fireEvent.click(screen.getByLabelText('忽略空行'))
-    expect(onOptionsChange).toHaveBeenCalledWith({ trimWhitespace: false, ignoreCase: false, ignoreBlankLines: true, ignoreAllWhitespace: false, charMode: false })
+    expect(onOptionsChange).toHaveBeenCalledWith({
+      trimWhitespace: false,
+      ignoreCase: false,
+      ignoreBlankLines: true,
+      ignoreAllWhitespace: false,
+      charMode: false
+    })
   })
 
   it('切换忽略所有空白触发 onOptionsChange', () => {
     const { onOptionsChange } = setup()
     fireEvent.click(screen.getByLabelText('忽略所有空白'))
-    expect(onOptionsChange).toHaveBeenCalledWith({ trimWhitespace: false, ignoreCase: false, ignoreBlankLines: false, ignoreAllWhitespace: true, charMode: false })
+    expect(onOptionsChange).toHaveBeenCalledWith({
+      trimWhitespace: false,
+      ignoreCase: false,
+      ignoreBlankLines: false,
+      ignoreAllWhitespace: true,
+      charMode: false
+    })
   })
 
   it('切换字符级对比触发 onOptionsChange', () => {
     const { onOptionsChange } = setup()
     fireEvent.click(screen.getByLabelText('字符级对比'))
-    expect(onOptionsChange).toHaveBeenCalledWith({ trimWhitespace: false, ignoreCase: false, ignoreBlankLines: false, ignoreAllWhitespace: false, charMode: true })
+    expect(onOptionsChange).toHaveBeenCalledWith({
+      trimWhitespace: false,
+      ignoreCase: false,
+      ignoreBlankLines: false,
+      ignoreAllWhitespace: false,
+      charMode: true
+    })
   })
 
   // 字符级开启时空白选项 label 带有“已包含”徽标，getByLabelText 需正则前缀匹配
@@ -264,10 +294,7 @@ describe('Toolbar', () => {
     fireEvent.click(screen.getByText('导出报告'))
     const item = screen.getByText('Patch 标准差异')
     expect(item).toBeDisabled()
-    expect(item).toHaveAttribute(
-      'title',
-      expect.stringContaining('Patch 无法表达')
-    )
+    expect(item).toHaveAttribute('title', expect.stringContaining('Patch 无法表达'))
     fireEvent.click(item)
     expect(onExport).not.toHaveBeenCalled()
   })

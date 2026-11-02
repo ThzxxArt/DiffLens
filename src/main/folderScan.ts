@@ -10,12 +10,7 @@ import { compileIgnoreRules, type IgnoreMatcher } from '../shared/ignoreRules'
 
 /** 单个文件条目的对比状态 */
 export type FolderEntryStatus =
-  | 'same'
-  | 'semantic-same'
-  | 'different'
-  | 'left-only'
-  | 'right-only'
-  | 'unreadable'
+  'same' | 'semantic-same' | 'different' | 'left-only' | 'right-only' | 'unreadable'
 
 export interface FolderEntry {
   /** 相对路径（统一 / 分隔，含子目录前缀） */
@@ -285,8 +280,7 @@ export async function scanFolders(
       }
       // 字节不同类：语义关闭或不适用 → different；开启且上次参与过 → 按 semSame 组合；
       // 开启但上次未参与（semSame null）→ 落到全量判定补判
-      const semActive =
-        semantic !== undefined && semanticEligible(rel, lSize ?? 0, rSize ?? 0)
+      const semActive = semantic !== undefined && semanticEligible(rel, lSize ?? 0, rSize ?? 0)
       if (!semActive) {
         entries[idx] = { rel, status: 'different', leftSize: lSize, rightSize: rSize }
         cache[idx] = { ...prev, status: 'different' }
@@ -396,10 +390,9 @@ export async function scanFolders(
   })
   // 受控并发分批执行（批内并行、批间串行；单任务失败已在任务内部降级为 unreadable）；
   // 每批完成触发一次进度回调（调用方推送 UI 进度，异常由调用方防御）
-  let done = 0
   for (let i = 0; i < tasks.length; i += SCAN_CONCURRENCY) {
     await Promise.all(tasks.slice(i, i + SCAN_CONCURRENCY).map((t) => t.run()))
-    done = Math.min(i + SCAN_CONCURRENCY, tasks.length)
+    const done = Math.min(i + SCAN_CONCURRENCY, tasks.length)
     try {
       options.onProgress?.(done, tasks.length)
     } catch {

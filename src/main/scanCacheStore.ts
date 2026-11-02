@@ -112,9 +112,7 @@ export function putScanCache(
   pairs[key] = { cache: cache.map((c) => ({ ...c })), savedAt: now }
   const keys = Object.keys(pairs)
   if (keys.length > SCAN_CACHE_PAIRS_MAX) {
-    const others = keys
-      .filter((k) => k !== key)
-      .sort((a, b) => pairs[a].savedAt - pairs[b].savedAt)
+    const others = keys.filter((k) => k !== key).sort((a, b) => pairs[a].savedAt - pairs[b].savedAt)
     const overflow = keys.length - SCAN_CACHE_PAIRS_MAX
     for (let i = 0; i < overflow && i < others.length; i++) delete pairs[others[i]]
   }

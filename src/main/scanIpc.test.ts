@@ -4,11 +4,19 @@ import { isScanCacheEntries, resolveScanArgs } from './scanIpc'
 
 /** 构造一条合法缓存条目（IPC 形态校验只看 rel/status 字符串字段） */
 function entry(rel: string): ScanCacheEntry {
-  return { rel, leftFp: { size: 1, mtime: 100 }, rightFp: { size: 1, mtime: 100 }, status: 'same', semSame: null }
+  return {
+    rel,
+    leftFp: { size: 1, mtime: 100 },
+    rightFp: { size: 1, mtime: 100 },
+    status: 'same',
+    semSame: null
+  }
 }
 
 /** 盘上缓存读取 stub：返回指定缓存并记录调用 */
-function storedLoader(cache: ScanCacheEntry[] | null): (() => ScanCacheEntry[] | null) & { calls: number } {
+function storedLoader(
+  cache: ScanCacheEntry[] | null
+): (() => ScanCacheEntry[] | null) & { calls: number } {
   const f = (): ScanCacheEntry[] | null => {
     f.calls++
     return cache
@@ -63,7 +71,9 @@ describe('resolveScanArgs - 缓存源选择与忽略规则校验', () => {
   })
 
   it('盘上缓存为 null 或空数组：不注入 previous（全量扫描）', async () => {
-    expect((await resolveScanArgs(undefined, undefined, storedLoader(null))).previous).toBeUndefined()
+    expect(
+      (await resolveScanArgs(undefined, undefined, storedLoader(null))).previous
+    ).toBeUndefined()
     expect((await resolveScanArgs(undefined, undefined, storedLoader([]))).previous).toBeUndefined()
   })
 
@@ -76,16 +86,17 @@ describe('resolveScanArgs - 缓存源选择与忽略规则校验', () => {
   })
 
   it('忽略规则合法字符串数组传递（空数组合法）', async () => {
-    expect((await resolveScanArgs(undefined, ['node_modules/', '*.log'], storedLoader(null))).ignore).toEqual([
-      'node_modules/',
-      '*.log'
-    ])
+    expect(
+      (await resolveScanArgs(undefined, ['node_modules/', '*.log'], storedLoader(null))).ignore
+    ).toEqual(['node_modules/', '*.log'])
     expect((await resolveScanArgs(undefined, [], storedLoader(null))).ignore).toEqual([])
   })
 
   it('忽略规则非法形态（非数组/含非字符串/超条数）整体忽略', async () => {
     expect((await resolveScanArgs(undefined, null, storedLoader(null))).ignore).toBeUndefined()
-    expect((await resolveScanArgs(undefined, 'node_modules/', storedLoader(null))).ignore).toBeUndefined()
+    expect(
+      (await resolveScanArgs(undefined, 'node_modules/', storedLoader(null))).ignore
+    ).toBeUndefined()
     expect((await resolveScanArgs(undefined, ['a', 42], storedLoader(null))).ignore).toBeUndefined()
     expect(
       (

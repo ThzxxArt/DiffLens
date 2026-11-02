@@ -259,16 +259,16 @@ describe('FolderView - 搜索', () => {
     // 搜索强制展开命中路径：diff.ts 可见
     expect(screen.getByText('diff.ts')).toBeInTheDocument()
     // 同目录重扫（leftDir/rightDir 不变，entries 变化）：状态保留（diff.ts 仍受搜索过滤）
-    rerender(
-      <FolderView
-        {...fullProps([...ENTRIES], { onlyDiff: false })}
-      />
-    )
+    rerender(<FolderView {...fullProps([...ENTRIES], { onlyDiff: false })} />)
     expect(screen.getByText('diff.ts')).toBeInTheDocument()
     // 重新选择新目录对：搜索/折叠全部重置（无搜索过滤、目录默认展开）
     rerender(
       <FolderView
-        {...fullProps(ENTRIES, { onlyDiff: false, leftDir: 'C:/new-left', rightDir: 'D:/new-right' })}
+        {...fullProps(ENTRIES, {
+          onlyDiff: false,
+          leftDir: 'C:/new-left',
+          rightDir: 'D:/new-right'
+        })}
       />
     )
     const input = screen.getByPlaceholderText(/搜索文件名…/) as HTMLInputElement
@@ -362,11 +362,7 @@ describe('FolderView - 忽略规则', () => {
 
   it('下拉打开时以当前规则初始化草稿，逐行解析后应用并关闭', () => {
     const onIgnoreRulesChange = vi.fn()
-    render(
-      <FolderView
-        {...fullProps(ENTRIES, { ignoreRules: ['dist/'], onIgnoreRulesChange })}
-      />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { ignoreRules: ['dist/'], onIgnoreRulesChange })} />)
     fireEvent.click(screen.getByRole('button', { name: '忽略规则 · 1' }))
     const ta = screen.getByPlaceholderText(/每行一条/) as HTMLTextAreaElement
     expect(ta.value).toBe('dist/')
@@ -379,11 +375,7 @@ describe('FolderView - 忽略规则', () => {
 
   it('清空规则回调空数组并关闭', () => {
     const onIgnoreRulesChange = vi.fn()
-    render(
-      <FolderView
-        {...fullProps(ENTRIES, { ignoreRules: ['dist/'], onIgnoreRulesChange })}
-      />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { ignoreRules: ['dist/'], onIgnoreRulesChange })} />)
     fireEvent.click(screen.getByRole('button', { name: '忽略规则 · 1' }))
     fireEvent.click(screen.getByText('清空规则'))
     expect(onIgnoreRulesChange).toHaveBeenCalledWith([])
@@ -407,9 +399,7 @@ describe('FolderView - 忽略规则', () => {
     const many = Array.from({ length: 60 }, (_, i) => `d${i}/`).join('\n')
     fireEvent.change(screen.getByPlaceholderText(/每行一条/), { target: { value: many } })
     fireEvent.click(screen.getByText('应用并重扫'))
-    expect(onIgnoreRulesChange).toHaveBeenCalledWith(
-      Array.from({ length: 50 }, (_, i) => `d${i}/`)
-    )
+    expect(onIgnoreRulesChange).toHaveBeenCalledWith(Array.from({ length: 50 }, (_, i) => `d${i}/`))
   })
 
   it('无效规则实时提示（不再静默丢弃），修正/清空后提示消失', () => {
@@ -454,9 +444,7 @@ describe('FolderView - 快照对照模式', () => {
   // 变迁：a.txt fixed、gone.txt gone、new.txt new、b.txt stable
 
   it('对照模式渲染变迁统计徽章与基线信息，替换常规统计行', () => {
-    render(
-      <FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />
-    )
+    render(<FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />)
     expect(screen.getByText('已修复 1')).toBeInTheDocument()
     expect(screen.getByText('新文件 1')).toBeInTheDocument()
     expect(screen.getByText('已移除 1')).toBeInTheDocument()
@@ -469,9 +457,7 @@ describe('FolderView - 快照对照模式', () => {
   })
 
   it('对照条目平铺全路径渲染，行尾带变迁徽章；零计数变迁不占位', () => {
-    render(
-      <FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />
-    )
+    render(<FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />)
     // 全路径显示（非树形文件名）
     expect(screen.getByText('a.txt')).toBeInTheDocument()
     expect(screen.getByText('new.txt')).toBeInTheDocument()
@@ -485,9 +471,7 @@ describe('FolderView - 快照对照模式', () => {
   })
 
   it('点击变迁徽章过滤该类条目，再点取消', () => {
-    render(
-      <FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />
-    )
+    render(<FolderView {...fullProps(CUR_ENTRIES, { snapshot: snap, snapshotDiff: snapDiff })} />)
     expect(screen.getByText('a.txt')).toBeInTheDocument()
     fireEvent.click(screen.getByText('已修复 1'))
     // 只剩 fixed 类（a.txt）
@@ -556,11 +540,7 @@ describe('FolderView - 快照对照模式', () => {
       { rel: 'b.txt', status: 'same', leftSize: 1, rightSize: 1 }
     ]
     const stableDiff = diffSnapshot(allSame, allSame)
-    render(
-      <FolderView
-        {...fullProps(allSame, { snapshot: snap, snapshotDiff: stableDiff })}
-      />
-    )
+    render(<FolderView {...fullProps(allSame, { snapshot: snap, snapshotDiff: stableDiff })} />)
     expect(screen.getByText('与快照基线完全一致，没有任何变迁')).toBeInTheDocument()
   })
 
@@ -571,9 +551,7 @@ describe('FolderView - 快照对照模式', () => {
       version: 2,
       contents: { 'a.txt': { left: 'baseline', right: null } }
     }
-    render(
-      <FolderView {...fullProps(CUR_ENTRIES, { snapshot: snapV2, snapshotDiff: snapDiff })} />
-    )
+    render(<FolderView {...fullProps(CUR_ENTRIES, { snapshot: snapV2, snapshotDiff: snapDiff })} />)
     const rowWith = screen.getByText('a.txt').closest('.folder-row') as HTMLElement
     expect(rowWith.title).toContain('双击查看快照基线内容对照')
     const rowWithout = screen.getByText('new.txt').closest('.folder-row') as HTMLElement
@@ -615,9 +593,7 @@ describe('FolderView - 其他', () => {
   it('快照下拉菜单项触发保存/加载回调并关闭菜单（0.10.5 归组下拉）', () => {
     const onSaveSnapshot = vi.fn()
     const onLoadSnapshot = vi.fn()
-    render(
-      <FolderView {...fullProps(ENTRIES, { onSaveSnapshot, onLoadSnapshot })} />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { onSaveSnapshot, onLoadSnapshot })} />)
     fireEvent.click(screen.getByRole('button', { name: '快照' }))
     fireEvent.click(screen.getByText('保存快照…'))
     expect(onSaveSnapshot).toHaveBeenCalledTimes(1)
@@ -640,11 +616,7 @@ describe('FolderView - 其他', () => {
   it('快照保存中禁用快照入口与菜单项，其余操作不受影响（0.10.2 按钮级防抖的归组形态）', () => {
     const onSaveSnapshot = vi.fn()
     const onLoadSnapshot = vi.fn()
-    render(
-      <FolderView
-        {...fullProps(ENTRIES, { saving: true, onSaveSnapshot, onLoadSnapshot })}
-      />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { saving: true, onSaveSnapshot, onLoadSnapshot })} />)
     // 入口禁用（点击不打开下拉）
     expect(screen.getByRole('button', { name: '快照' })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: '快照' }))
@@ -701,9 +673,7 @@ describe('FolderView - 其他', () => {
 
   it('扫描中禁用忽略规则入口（应用规则会触发重扫）', () => {
     const onIgnoreRulesChange = vi.fn()
-    render(
-      <FolderView {...fullProps(ENTRIES, { scanning: true, onIgnoreRulesChange })} />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { scanning: true, onIgnoreRulesChange })} />)
     const btn = screen.getByRole('button', { name: /忽略规则/ })
     expect(btn).toBeDisabled()
     // 禁用按钮点击不打开规则下拉、不触发回调
@@ -714,9 +684,7 @@ describe('FolderView - 其他', () => {
 
   it('扫描中仅看差异开关与搜索仍可用（纯视图过滤不触发重扫）', () => {
     const onOnlyDiffChange = vi.fn()
-    render(
-      <FolderView {...fullProps(ENTRIES, { scanning: true, onOnlyDiffChange })} />
-    )
+    render(<FolderView {...fullProps(ENTRIES, { scanning: true, onOnlyDiffChange })} />)
     expect(screen.getByLabelText('仅看差异')).not.toBeDisabled()
     const search = screen.getByPlaceholderText(/搜索文件名…/)
     expect(search).not.toBeDisabled()
@@ -742,14 +710,15 @@ describe('FolderView - 其他', () => {
   })
 
   it('近似判定条目渲染 ≈ 标注', () => {
-    renderView([{ rel: 'huge.bin', status: 'same', leftSize: 1, rightSize: 1, approximate: true }], false)
+    renderView(
+      [{ rel: 'huge.bin', status: 'same', leftSize: 1, rightSize: 1, approximate: true }],
+      false
+    )
     expect(screen.getByText('≈')).toBeInTheDocument()
   })
 
   it('截断时展示文件过多提示', () => {
-    render(
-      <FolderView {...fullProps(ENTRIES.slice(0, 2), { truncated: true, total: 9999 })} />
-    )
+    render(<FolderView {...fullProps(ENTRIES.slice(0, 2), { truncated: true, total: 9999 })} />)
     expect(screen.getByText(/文件过多/)).toBeInTheDocument()
   })
 

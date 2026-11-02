@@ -111,8 +111,12 @@ describe('parseSnapshot - v2 内容字段（contents）', () => {
 
   it('contents 形态异常整体回退 null（绝不部分加载）', () => {
     // contents 非对象
-    expect(parseSnapshot(JSON.stringify({ ...makeSnapshot({ version: 2 }), contents: 'x' }))).toBeNull()
-    expect(parseSnapshot(JSON.stringify({ ...makeSnapshot({ version: 2 }), contents: [] }))).toBeNull()
+    expect(
+      parseSnapshot(JSON.stringify({ ...makeSnapshot({ version: 2 }), contents: 'x' }))
+    ).toBeNull()
+    expect(
+      parseSnapshot(JSON.stringify({ ...makeSnapshot({ version: 2 }), contents: [] }))
+    ).toBeNull()
     // 单条记录 left/right 非字符串也非 null
     expect(
       parseSnapshot(

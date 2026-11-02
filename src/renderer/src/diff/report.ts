@@ -130,10 +130,7 @@ export function plainSummary(summary: DiffSummary): string {
 }
 
 /** 已生效比较选项的人话描述（报告头部展示；无选项生效时说明为严格对比） */
-export function plainOptions(
-  options?: DiffOptions,
-  extra?: { charModePartial?: boolean }
-): string {
+export function plainOptions(options?: DiffOptions, extra?: { charModePartial?: boolean }): string {
   // 字符级对比为最强空白语义（全部空白与换行都不参与判等），单独描述并遮蔽空白类子选项；
   // 大内容按“行锚定 + 变更组分块”计算，不再整篇受字符量上限约束，总预算随输入规模自适应；
   // 部分降级（逐组预算制）时标注部分差异过大的块按行级对比
@@ -154,11 +151,7 @@ export function plainOptions(
   return on.length > 0 ? on.join('、') : '无（严格逐字符对比）'
 }
 
-const headLines = (
-  ctx: ReportContext,
-  summary: DiffSummary,
-  title: string
-): string[] => [
+const headLines = (ctx: ReportContext, summary: DiffSummary, title: string): string[] => [
   title,
   `对比：${ctx.leftName || '（未选择）'}${ctx.leftEncoding ? ` (${ctx.leftEncoding})` : ''}${
     ctx.leftPath ? ` [${ctx.leftPath}]` : ''
@@ -172,9 +165,7 @@ const headLines = (
   `结论：${plainSummary(summary)}`,
   `变更统计：新增 ${summary.inserted} ｜ 删除 ${summary.deleted} ｜ 修改 ${summary.modified}` +
     // 字符级模式追加字符粒度统计（码点数；超长防护行无法细分不计入）
-    (ctx.options?.charMode
-      ? ` ｜ 字符 +${summary.charsAdded} / −${summary.charsDeleted}`
-      : '')
+    (ctx.options?.charMode ? ` ｜ 字符 +${summary.charsAdded} / −${summary.charsDeleted}` : '')
 ]
 
 /** 尾部署名行：携带生成器版本号（可追溯报告由哪个版本产出；未提供时与历史格式一致；文件夹报告复用） */
@@ -460,11 +451,7 @@ function renderToc(rows: DiffRow[], segs: ReportSegment[]): string {
   return `<div class="toc"><span class="toc-title">差异分布</span><div class="toc-list">${links}</div></div>`
 }
 
-export function buildHtmlReport(
-  rows: DiffRow[],
-  ctx: ReportContext,
-  summary: DiffSummary
-): string {
+export function buildHtmlReport(rows: DiffRow[], ctx: ReportContext, summary: DiffSummary): string {
   const segs = buildSegments(rows)
   const unchanged = rows.length - summary.changedLines
   const rate = rows.length > 0 ? `${((summary.changedLines / rows.length) * 100).toFixed(1)}%` : '—'
@@ -571,10 +558,7 @@ function txtSegmentLines(slice: DiffRow[], width: number): string[] {
       const r = padNo(row.right.lineNo, width)
       out.push(`~ ${l} | ${row.left.text ?? ''}   ==>   ${r} | ${row.right.text ?? ''}`)
     } else {
-      const no = padNo(
-        row.rowKind === 'added' ? row.right.lineNo : row.left.lineNo,
-        width
-      )
+      const no = padNo(row.rowKind === 'added' ? row.right.lineNo : row.left.lineNo, width)
       const text = row.rowKind === 'added' ? row.right.text : row.left.text
       out.push(`${tag} ${no} | ${text ?? ''}`)
     }
@@ -587,11 +571,7 @@ function txtSegmentLines(slice: DiffRow[], width: number): string[] {
  * 段间相同行以省略提示行替代（大文件报告不再被相同行淹没，体积可控；
  * 完全一致场景无变更，单段全展示保持全量——留档语义）。
  */
-export function buildTxtReport(
-  rows: DiffRow[],
-  ctx: ReportContext,
-  summary: DiffSummary
-): string {
+export function buildTxtReport(rows: DiffRow[], ctx: ReportContext, summary: DiffSummary): string {
   const head = headLines(ctx, summary, '====== DiffLens 差异报告 ======')
   const lines = [...head, '----------------------------------']
 
@@ -623,7 +603,10 @@ export function buildTxtReport(
 
 /** 单个行区间的 Markdown 表格（含表头；管道符转义与空行占位沿用既有规则） */
 function mdSegmentTable(slice: DiffRow[]): string[] {
-  const out: string[] = ['| 类型 | 左行号 | 左文件 | 右行号 | 右文件 |', '| --- | --- | --- | --- | --- |']
+  const out: string[] = [
+    '| 类型 | 左行号 | 左文件 | 右行号 | 右文件 |',
+    '| --- | --- | --- | --- | --- |'
+  ]
   for (const row of slice) {
     const tag = typeTag(row.rowKind)
     const lno = padNo(row.left.lineNo)

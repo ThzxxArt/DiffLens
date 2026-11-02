@@ -95,7 +95,11 @@ export function parseSnapshot(raw: string): FolderSnapshot | null {
     // contents 可选；存在时任一条目形态异常整体回退 null（与 entries 的绝不部分加载口径一致）
     let contents: Record<string, SnapshotContents> | undefined
     if (obj.contents !== undefined) {
-      if (typeof obj.contents !== 'object' || obj.contents === null || Array.isArray(obj.contents)) {
+      if (
+        typeof obj.contents !== 'object' ||
+        obj.contents === null ||
+        Array.isArray(obj.contents)
+      ) {
         return null
       }
       const map: Record<string, SnapshotContents> = {}
@@ -124,7 +128,10 @@ export function parseSnapshot(raw: string): FolderSnapshot | null {
 /** 状态是否计为"有差异"（不同 / 仅一侧 / 无法读取） */
 export function isDiffStatus(status: FolderEntryStatus): boolean {
   return (
-    status === 'different' || status === 'left-only' || status === 'right-only' || status === 'unreadable'
+    status === 'different' ||
+    status === 'left-only' ||
+    status === 'right-only' ||
+    status === 'unreadable'
   )
 }
 
@@ -183,7 +190,10 @@ export function snapshotDirsMatch(
   leftDir: string,
   rightDir: string
 ): boolean {
-  return normDir(baseline.leftDir) === normDir(leftDir) && normDir(baseline.rightDir) === normDir(rightDir)
+  return (
+    normDir(baseline.leftDir) === normDir(leftDir) &&
+    normDir(baseline.rightDir) === normDir(rightDir)
+  )
 }
 
 /**
@@ -192,14 +202,18 @@ export function snapshotDirsMatch(
  * 有差异 ↔ 无差异 的翻转记 fixed / regressed；双侧均有差异记 changed（含差异形态变化）；
  * 单侧存在记 new / gone；双侧均无差异记 stable。
  */
-export function diffSnapshot(
-  baseline: FolderEntry[],
-  current: FolderEntry[]
-): SnapshotDiffResult {
+export function diffSnapshot(baseline: FolderEntry[], current: FolderEntry[]): SnapshotDiffResult {
   const baseMap = new Map(baseline.map((e) => [e.rel, e]))
   const curMap = new Map(current.map((e) => [e.rel, e]))
   const rels = [...new Set([...baseMap.keys(), ...curMap.keys()])].sort()
-  const stats: SnapshotDiffStats = { fixed: 0, regressed: 0, new: 0, gone: 0, changed: 0, stable: 0 }
+  const stats: SnapshotDiffStats = {
+    fixed: 0,
+    regressed: 0,
+    new: 0,
+    gone: 0,
+    changed: 0,
+    stable: 0
+  }
   const entries = rels.map((rel) => {
     const b = baseMap.get(rel) ?? null
     const c = curMap.get(rel) ?? null

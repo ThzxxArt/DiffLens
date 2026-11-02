@@ -2,12 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { mkdtemp, mkdir, writeFile, rm, symlink } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import {
-  scanFolders,
-  semanticEquals,
-  SEMANTIC_MAX_BYTES,
-  type FolderEntry
-} from './folderScan'
+import { scanFolders, semanticEquals, SEMANTIC_MAX_BYTES, type FolderEntry } from './folderScan'
 
 /** 以临时目录为根构造两个待对比文件夹 */
 let leftDir: string
@@ -46,7 +41,11 @@ describe('scanFolders - 状态判定', () => {
 
     const r = await scanFolders(leftDir, rightDir)
     expect(r.truncated).toBe(false)
-    expect(byRel(r.entries, 'same.txt')).toMatchObject({ status: 'same', leftSize: 5, rightSize: 5 })
+    expect(byRel(r.entries, 'same.txt')).toMatchObject({
+      status: 'same',
+      leftSize: 5,
+      rightSize: 5
+    })
     expect(byRel(r.entries, 'content-diff.txt')?.status).toBe('different')
     expect(byRel(r.entries, 'size-diff.txt')).toMatchObject({ status: 'different' })
   })
@@ -307,7 +306,13 @@ describe('scanFolders - 语义判等', () => {
       await writeFile(join(l, 'same.txt'), 'same content\n')
       await writeFile(join(r, 'same.txt'), 'same content\n')
       const res = await scanFolders(l, r, {
-        semantic: { ...SEMANTIC, decode: async (b) => { decoded++; return b.toString('utf-8') } }
+        semantic: {
+          ...SEMANTIC,
+          decode: async (b) => {
+            decoded++
+            return b.toString('utf-8')
+          }
+        }
       })
       expect(byRel(res.entries, 'same.txt')?.status).toBe('same')
       expect(decoded).toBe(0)
@@ -726,7 +731,9 @@ describe('scanFolders - 忽略规则', () => {
         await writeFile(join(d, 'app.js'), 'a')
       }
       // node_modules/ 目录命中即整树剪枝，!node_modules/pkg/keep.js 无法救回
-      const res = await scanFolders(l, r, { ignore: ['node_modules/', '!node_modules/pkg/keep.js'] })
+      const res = await scanFolders(l, r, {
+        ignore: ['node_modules/', '!node_modules/pkg/keep.js']
+      })
       expect(res.entries.map((e) => e.rel)).toEqual(['app.js'])
     } finally {
       await rm(l, { recursive: true, force: true })

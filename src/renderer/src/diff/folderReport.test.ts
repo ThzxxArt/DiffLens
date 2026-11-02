@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { FolderEntry } from '../../../preload/index'
-import {
-  buildFolderReport,
-  countFolderStats,
-  fmtSize,
-  plainFolderSummary
-} from './folderReport'
+import { buildFolderReport, countFolderStats, fmtSize, plainFolderSummary } from './folderReport'
 import { diffSnapshot } from './snapshotDiff'
 
 const ENTRIES: FolderEntry[] = [
@@ -91,7 +86,9 @@ describe('plainFolderSummary', () => {
       { rel: 'a', status: 'same', leftSize: 1, rightSize: 1 },
       { rel: 'b', status: 'semantic-same', leftSize: 1, rightSize: 2 }
     ])
-    expect(plainFolderSummary(stats, 2)).toBe('两文件夹内容完全一致（其中 1 个文件仅空白/换行差异）')
+    expect(plainFolderSummary(stats, 2)).toBe(
+      '两文件夹内容完全一致（其中 1 个文件仅空白/换行差异）'
+    )
   })
 
   it('存在差异时完整罗列并附语义同说明', () => {

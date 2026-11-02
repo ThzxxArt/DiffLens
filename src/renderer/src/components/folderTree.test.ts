@@ -62,7 +62,12 @@ describe('flattenFolderTree', () => {
   it('全展开：深度递增、目录行在子行之前', () => {
     const rows = flattenFolderTree(buildFolderTree(E), () => true)
     expect(rows.map((r) => r.node.name)).toEqual([
-      'a.txt', 'sub', 'deep', 'x.ts', 'only-right.txt', 'z.md'
+      'a.txt',
+      'sub',
+      'deep',
+      'x.ts',
+      'only-right.txt',
+      'z.md'
     ])
     expect(rows.map((r) => r.depth)).toEqual([0, 0, 1, 2, 1, 0])
   })
@@ -161,7 +166,9 @@ describe('filterEntries - 扩展名过滤', () => {
   })
 
   it('exts 为 null 或缺省时不过滤（向后兼容）', () => {
-    expect(filterEntries(X, { onlyDiff: false, statusFilter: null, query: '', exts: null })).toHaveLength(5)
+    expect(
+      filterEntries(X, { onlyDiff: false, statusFilter: null, query: '', exts: null })
+    ).toHaveLength(5)
     expect(filterEntries(X, { onlyDiff: false, statusFilter: null, query: '' })).toHaveLength(5)
   })
 })

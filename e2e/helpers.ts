@@ -37,7 +37,10 @@ export async function launchApp(options: { fresh?: boolean } = {}): Promise<Laun
  * 主进程 stub：showOpenDialog 按调用序返回指定路径（每次调用取该组第一个文件）。
  * 闭包计数状态保留在主进程，覆盖「打开左侧 → 打开右侧」的连续调用。
  */
-export async function stubOpenDialogSeq(app: ElectronApplication, seqPaths: string[][]): Promise<void> {
+export async function stubOpenDialogSeq(
+  app: ElectronApplication,
+  seqPaths: string[][]
+): Promise<void> {
   await app.evaluate(({ dialog }, seq: string[][]) => {
     let i = 0
     dialog.showOpenDialog = async () => {

@@ -371,10 +371,9 @@ describe('useDiff - worker 后台计算', () => {
 
   it('文本变化时清空旧结果（防止展示与新面板不对应的过期差异）', () => {
     const factory = makeFactory()
-    const hook = renderHook(
-      (p: string) => useDiff(p, 'x', NO_OPTIONS, factory),
-      { initialProps: heavyText(2100) }
-    )
+    const hook = renderHook((p: string) => useDiff(p, 'x', NO_OPTIONS, factory), {
+      initialProps: heavyText(2100)
+    })
     act(() => {
       vi.advanceTimersByTime(250)
     })

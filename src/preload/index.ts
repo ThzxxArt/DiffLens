@@ -24,12 +24,7 @@ export type FileOpenResult = FileData | FileOpenError | null
 
 /** 文件夹对比条目状态（与主进程 folderScan 对齐；semantic-same = 字节不同但剔除空白后内容一致；unreadable = 读取失败被锁/权限） */
 export type FolderEntryStatus =
-  | 'same'
-  | 'semantic-same'
-  | 'different'
-  | 'left-only'
-  | 'right-only'
-  | 'unreadable'
+  'same' | 'semantic-same' | 'different' | 'left-only' | 'right-only' | 'unreadable'
 
 /** 文件夹对比单个条目 */
 export interface FolderEntry {
@@ -88,16 +83,19 @@ export interface ReadBatchResult {
 const api = {
   openFile: (side?: 'left' | 'right'): Promise<FileOpenResult> =>
     ipcRenderer.invoke('file:open', side ?? null),
-  decodeBuffer: (buffer: ArrayBuffer): Promise<{ text: string; encoding: string; binary: boolean }> =>
+  decodeBuffer: (
+    buffer: ArrayBuffer
+  ): Promise<{ text: string; encoding: string; binary: boolean }> =>
     ipcRenderer.invoke('file:decode-buffer', buffer),
-  saveReport: (content: string, defaultName: string): Promise<{ ok: boolean; path: string | null }> =>
+  saveReport: (
+    content: string,
+    defaultName: string
+  ): Promise<{ ok: boolean; path: string | null }> =>
     ipcRenderer.invoke('file:save-report', content, defaultName),
   showInFolder: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:show-in-folder', filePath),
-  setClipboard: (text: string): Promise<boolean> =>
-    ipcRenderer.invoke('clipboard:write', text),
-  pickFolder: (): Promise<string | null> =>
-    ipcRenderer.invoke('folder:pick'),
+  setClipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('clipboard:write', text),
+  pickFolder: (): Promise<string | null> => ipcRenderer.invoke('folder:pick'),
   scanFolder: (
     leftDir: string,
     rightDir: string,

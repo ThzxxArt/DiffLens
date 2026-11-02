@@ -13,12 +13,7 @@ interface ContextMenuProps {
   onClose: () => void
 }
 
-export default function ContextMenu({
-  x,
-  y,
-  items,
-  onClose
-}: ContextMenuProps): ReactElement {
+export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps): ReactElement {
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: x, top: y })
   // 键盘导航高亮项（-1 = 无高亮；disabled 项不可选中）
@@ -92,7 +87,9 @@ export default function ContextMenu({
         {items.map((it, i) => (
           <button
             key={i}
-            className={'ctx-item' + (active === i ? ' active' : '') + (it.disabled ? ' disabled' : '')}
+            className={
+              'ctx-item' + (active === i ? ' active' : '') + (it.disabled ? ' disabled' : '')
+            }
             disabled={it.disabled}
             onMouseEnter={() => setActive(i)}
             onClick={() => {

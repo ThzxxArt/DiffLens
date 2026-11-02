@@ -9,6 +9,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ['iconv-lite'] })],
     build: {
       sourcemap: false,
+      minify: true,
       rollupOptions: {
         // 双入口：主进程 + 解码 worker（worker_threads 无法加载 asar 内脚本，需单独产物）
         input: {
@@ -25,10 +26,14 @@ export default defineConfig({
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      sourcemap: false
+      sourcemap: false,
+      minify: true
     }
   },
   renderer: {
+    build: {
+      minify: true
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')

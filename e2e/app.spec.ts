@@ -56,12 +56,7 @@ test.describe('文件打开与编码识别（主进程真实解码链路）', ()
   })
 
   test('打开 GBK 与 UTF-8 BOM 文件：编码标注与内容正确渲染', async () => {
-    const gbkPath = await writeTextFixture(
-      dir,
-      'gbk.txt',
-      '中文内容第一行\n第二行数据',
-      'gbk'
-    )
+    const gbkPath = await writeTextFixture(dir, 'gbk.txt', '中文内容第一行\n第二行数据', 'gbk')
     const bomPath = await writeTextFixture(dir, 'bom.txt', 'BOM 首行\nBOM 第二行', 'utf8-bom')
     const { app, window } = await launchApp()
     await stubOpenDialogSeq(app, [[gbkPath], [bomPath]])
@@ -129,7 +124,11 @@ test.describe('比较选项端到端', () => {
       const right = [...left]
       right[300] = 'L0300-abcdefghijXlmnopqrstuvwxyz'
       right.splice(530, 20)
-      right.splice(812, 0, ...Array.from({ length: 12 }, (_, k) => `N${pad(k)}-newcontent-${k}0987654321`))
+      right.splice(
+        812,
+        0,
+        ...Array.from({ length: 12 }, (_, k) => `N${pad(k)}-newcontent-${k}0987654321`)
+      )
       const lp = await writeTextFixture(dir, 'left.txt', left.join('\n'))
       const rp = await writeTextFixture(dir, 'right.txt', right.join('\n'))
 
@@ -151,7 +150,9 @@ test.describe('比较选项端到端', () => {
         el.scrollTop = 5000
         el.dispatchEvent(new Event('scroll'))
       }, scrollSel)
-      expect(await window.evaluate((s) => document.querySelector(s).scrollTop, scrollSel)).toBe(5000)
+      expect(await window.evaluate((s) => document.querySelector(s).scrollTop, scrollSel)).toBe(
+        5000
+      )
 
       await window.getByLabel('忽略大小写').check()
       await window.waitForTimeout(150)
@@ -162,7 +163,9 @@ test.describe('比较选项端到端', () => {
       // 重算完成后位置仍稳定
       await window.getByText('有差异').first().waitFor()
       await window.waitForTimeout(300)
-      expect(await window.evaluate((s) => document.querySelector(s).scrollTop, scrollSel)).toBe(5000)
+      expect(await window.evaluate((s) => document.querySelector(s).scrollTop, scrollSel)).toBe(
+        5000
+      )
 
       // 滚到底部验证内容连续无重复渲染错乱
       await window.evaluate((s) => {
@@ -521,9 +524,7 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       await window.getByPlaceholder(/每行一条/).fill('a**b')
       await expect(window.getByText(/将被忽略的无效规则：a\*\*b/)).toBeVisible()
       // 替换为正式规则：build 下任意深度 temp 剪枝 + *.log 忽略 + keep.log 否定救回
-      await window
-        .getByPlaceholder(/每行一条/)
-        .fill('build/**/temp\n*.log\n!keep.log')
+      await window.getByPlaceholder(/每行一条/).fill('build/**/temp\n*.log\n!keep.log')
       await window.getByText('应用并重扫').click()
       // t1/t2 被剪（** 跨段）、app.log 被忽略、keep.log 被否定救回 → 仅剩 keep.txt 与 keep.log 差异
       await expect(window.getByText('不同 2')).toBeVisible()
@@ -596,9 +597,9 @@ test.describe('文件夹对比（主进程真实扫描链路）', () => {
       await stubOpenDialogSeq(first.app, [[leftDir], [rightDir]])
       await first.window.getByRole('button', { name: '对比文件夹' }).click()
       await expect(first.window.getByText('相同 1')).toBeVisible()
-      const cachePath = await first.app.evaluate(({ app }) => app.getPath('userData')).then(
-        (userData) => join(userData, 'scan-cache.json')
-      )
+      const cachePath = await first.app
+        .evaluate(({ app }) => app.getPath('userData'))
+        .then((userData) => join(userData, 'scan-cache.json'))
       await first.app.close()
 
       // 落盘文件存在且含本目录对的缓存条目（等待异步写盘完成）
@@ -808,13 +809,9 @@ test.describe('拖拽导入（真实 Chromium DataTransfer 链路）', () => {
 
   test('双侧拖入形成对比：差异渲染', async () => {
     const { app, window } = await launchApp()
-    await dropFiles(window, '.pane-empty', [
-      { name: 'a.txt', content: 'same\nleft-unique' }
-    ])
+    await dropFiles(window, '.pane-empty', [{ name: 'a.txt', content: 'same\nleft-unique' }])
     // 左侧装载后进入对比视图：右侧为 DiffView 面板（.pane-right），不再是空态
-    await dropFiles(window, '.pane-right', [
-      { name: 'b.txt', content: 'same\nright-unique' }
-    ])
+    await dropFiles(window, '.pane-right', [{ name: 'b.txt', content: 'same\nright-unique' }])
     await expect(window.getByText('有差异')).toBeVisible()
     await expect(window.getByText('left-unique').first()).toBeVisible()
     await expect(window.getByText('right-unique').first()).toBeVisible()
@@ -839,9 +836,7 @@ test.describe('拖拽导入（真实 Chromium DataTransfer 链路）', () => {
       { name: 'second.txt', content: 'second content' }
     ])
     await expect(window.getByText(/一次只能导入一个文件/)).toBeVisible()
-    await expect(
-      window.locator('.pane-file').filter({ hasText: 'first.txt' })
-    ).toBeVisible()
+    await expect(window.locator('.pane-file').filter({ hasText: 'first.txt' })).toBeVisible()
     await app.close()
   })
 })
@@ -877,7 +872,9 @@ test.describe('关于弹框（0.10.2）', () => {
     await expect(window.locator('.about-modal')).toContainText('ThzxxArt')
     await expect(window.locator('.about-modal')).toContainText('stinanimz@gmail.com')
     await expect(window.locator('.about-modal')).toContainText('1440196015@qq.com')
-    await expect(window.locator('.about-modal')).toContainText('https://github.com/ThzxxArt/DiffLens')
+    await expect(window.locator('.about-modal')).toContainText(
+      'https://github.com/ThzxxArt/DiffLens'
+    )
     await expect(window.locator('.about-modal')).toContainText('MIT License')
     // 点击邮箱复制到剪贴板（主进程剪贴板链路）+ toast 反馈
     await window.getByText('stinanimz@gmail.com').click()
@@ -909,9 +906,7 @@ test.describe('大快照加载（0.10.2 专用读取通道）', () => {
         semantic: true,
         truncated: false,
         total: 1,
-        entries: [
-          { rel: 'same.txt', status: 'same', leftSize: 9, rightSize: 9 }
-        ],
+        entries: [{ rel: 'same.txt', status: 'same', leftSize: 9, rightSize: 9 }],
         savedAt: Date.now(),
         contents: { 'same.txt': { left: 'x'.repeat(11 * 1024 * 1024), right: null } }
       }
@@ -979,9 +974,7 @@ test.describe('大文件性能基准（耗时上限断言）', () => {
       const t0 = Date.now()
       await window.getByRole('button', { name: '打开左侧' }).click()
       // 完整渲染以状态栏总行数为准（末行在虚拟滚动视口外）
-      await expect(
-        window.locator('.status-item').filter({ hasText: '15000 行' })
-      ).toBeVisible()
+      await expect(window.locator('.status-item').filter({ hasText: '15000 行' })).toBeVisible()
       const elapsed = Date.now() - t0
       expect(elapsed).toBeLessThan(10000)
       await expect(window.getByText('中文大文件行0数据')).toBeVisible()

@@ -26,11 +26,7 @@ export const ABOUT_INFO = {
  * 关闭方式与粘贴弹窗同语言：Esc / 点击遮罩 / 右上角关闭按钮；
  * 邮箱与开源地址点击复制到剪贴板（复用主进程剪贴板管线，不引入外部跳转）。
  */
-export default function AboutModal({
-  version,
-  onClose,
-  onCopy
-}: AboutModalProps): ReactElement {
+export default function AboutModal({ version, onClose, onCopy }: AboutModalProps): ReactElement {
   // Esc 关闭
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

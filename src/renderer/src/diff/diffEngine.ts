@@ -204,9 +204,7 @@ function computeLineDiff(
   // 行号与行文本绑定；忽略空行模式下剔除空白行（行号保留原值，便于定位原始文件位置）
   const leftSeq: NumberedLine[] = leftOrig.map((text, i) => ({ text, lineNo: i + 1 }))
   const rightSeq: NumberedLine[] = rightOrig.map((text, i) => ({ text, lineNo: i + 1 }))
-  const leftUsed = options.ignoreBlankLines
-    ? leftSeq.filter((p) => p.text.trim() !== '')
-    : leftSeq
+  const leftUsed = options.ignoreBlankLines ? leftSeq.filter((p) => p.text.trim() !== '') : leftSeq
   const rightUsed = options.ignoreBlankLines
     ? rightSeq.filter((p) => p.text.trim() !== '')
     : rightSeq
@@ -250,8 +248,7 @@ function computeLineDiff(
       const r = addedRows[i]
       if (l && r) {
         // 任一侧超长则跳过词级高亮（segs 置空），行仍按 modified 展示行级背景
-        const skipWordDiff =
-          l.text.length > WORD_DIFF_MAX_LEN || r.text.length > WORD_DIFF_MAX_LEN
+        const skipWordDiff = l.text.length > WORD_DIFF_MAX_LEN || r.text.length > WORD_DIFF_MAX_LEN
         const { left: lSegs, right: rSegs } = skipWordDiff
           ? { left: null, right: null }
           : wordSegments(l.text, r.text)
@@ -411,11 +408,7 @@ interface CharStream {
  * 行号与列号取原始文件位置（供字符差异回映射到行）。
  * lineIdx 为组内行的 0 基下标序列（左右两侧各自收集）。
  */
-function groupStream(
-  orig: string[],
-  lineIdx: number[],
-  norm: (ch: string) => string
-): CharStream {
+function groupStream(orig: string[], lineIdx: number[], norm: (ch: string) => string): CharStream {
   const chars: string[] = []
   const lineNos: number[] = []
   const cols: number[] = []
@@ -505,10 +498,8 @@ function computeCharDiff(
   const lineParts = diffArrays(leftOrig.map(normLine), rightOrig.map(normLine))
 
   // 输出时间线：锚行（行归一化判等，左右原文各自展示）与变更组占位按序交替
-  const timeline: Array<
-    | { kind: 'anchor'; ln: number; rn: number }
-    | { kind: 'group'; g: number }
-  > = []
+  const timeline: Array<{ kind: 'anchor'; ln: number; rn: number } | { kind: 'group'; g: number }> =
+    []
   const groups: { l: number[]; r: number[] }[] = []
   let lPtr = 0
   let rPtr = 0
@@ -553,10 +544,7 @@ function computeCharDiff(
    * 由调用方整体降级（等价旧行为）。
    */
   const groupParts: Array<Change[] | null> = []
-  const totalGroupChars = streams.reduce(
-    (acc, s) => acc + s.ls.text.length + s.rs.text.length,
-    0
-  )
+  const totalGroupChars = streams.reduce((acc, s) => acc + s.ls.text.length + s.rs.text.length, 0)
   let budget = charGroupBudget(totalGroupChars)
   let anyChar = false
   for (const { ls, rs } of streams) {
@@ -652,8 +640,7 @@ function emitGroupLineLevel(
       const l = queuedRemoved[i]
       const r = addedRows[i]
       if (l && r) {
-        const skipWordDiff =
-          l.text.length > WORD_DIFF_MAX_LEN || r.text.length > WORD_DIFF_MAX_LEN
+        const skipWordDiff = l.text.length > WORD_DIFF_MAX_LEN || r.text.length > WORD_DIFF_MAX_LEN
         const { left: lSegs, right: rSegs } = skipWordDiff
           ? { left: null, right: null }
           : wordSegments(l.text, r.text)
