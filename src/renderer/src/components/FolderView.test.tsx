@@ -4,6 +4,7 @@ import { createRef } from 'react'
 import FolderView, { FOLDER_ROW_HEIGHT } from './FolderView'
 import type { FolderEntry } from '../../../preload/index'
 import { diffSnapshot, type FolderSnapshot } from '../diff/snapshotDiff'
+import { IGNORE_RULE_MAX_LEN } from '../../../shared/ignoreRules'
 
 const ENTRIES: FolderEntry[] = [
   { rel: 'a.txt', status: 'same', leftSize: 5, rightSize: 5 },
@@ -390,6 +391,20 @@ describe('FolderView - 忽略规则', () => {
     fireEvent.mouseDown(document.body)
     expect(screen.queryByText('应用并重扫')).not.toBeInTheDocument()
     expect(onIgnoreRulesChange).not.toHaveBeenCalled()
+  })
+
+  it('超长规则被过滤，不连累同批合法规则下发（0.12.1）', () => {
+    const onIgnoreRulesChange = vi.fn()
+    render(<FolderView {...fullProps(ENTRIES, { onIgnoreRulesChange })} />)
+    fireEvent.click(screen.getByRole('button', { name: '忽略规则' }))
+    const long = 'x'.repeat(IGNORE_RULE_MAX_LEN + 1)
+    fireEvent.change(screen.getByPlaceholderText(/每行一条/), {
+      target: { value: `node_modules/\n${long}\n*.log` }
+    })
+    // 草稿里仍实时提示超长规则无效
+    expect(screen.getByText(/将被忽略的无效规则/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('应用并重扫'))
+    expect(onIgnoreRulesChange).toHaveBeenCalledWith(['node_modules/', '*.log'])
   })
 
   it('规则条数超上限截断至 50 条', () => {

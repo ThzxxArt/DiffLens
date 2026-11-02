@@ -651,20 +651,84 @@ export function buildMarkdownReport(
 
 /** ============ Patch（标准 unified diff）报告 ============ */
 
+/** 单侧行号是否从 1 开始连续递增（空槽跳过）：不连续说明 rows 省略了某些行。 */
+function sideContinuous(rows: DiffRow[], pick: (row: DiffRow) => SideCell): boolean {
+  let expected = 1
+  for (const row of rows) {
+    const lineNo = pick(row).lineNo
+    if (lineNo === null) continue
+    if (lineNo !== expected) return false
+    expected++
+  }
+  return true
+}
+
 /**
- * Patch 是否可从当前行集生成：判等类比较选项（忽略大小写/所有空白/字符级等）会把
- * 两侧实际不同的文本判为 unchanged（上下文行），unified diff 的上下文行必须双侧一致，
- * 否则产出的 patch 无法正确应用。逐行扫描精确判定——碰巧未触发判等差异的场景仍可导出。
+ * Patch 是否可从当前行集生成：
+ * 1. 判等类选项（忽略大小写/所有空白/字符级等）会把两侧实际不同的文本判为
+ *    unchanged（上下文行），unified diff 的上下文行必须双侧一致；
+ * 2. 行号必须从 1 连续递增——忽略空行会从 rows 中剔除空行，hunk 头按剩余行
+ *    计数会导致 patch 行号错位，无法安全应用。
+ * 逐行扫描精确判定：碰巧未触发判等/未省略空行的场景仍可导出。
  */
 export function canBuildPatch(rows: DiffRow[]): boolean {
   for (const r of rows) {
     if (!r.isChanged && r.left.text !== r.right.text) return false
   }
-  return true
+  return sideContinuous(rows, (r) => r.left) && sideContinuous(rows, (r) => r.right)
 }
 
 /** 侧文本：unchanged 行两侧一致（canBuildPatch 已保证非污染；空槽行取非空侧） */
 const ctxText = (row: DiffRow): string => row.left.text ?? row.right.text ?? ''
+
+/** 路径统一为正斜杠（unified diff 的路径分隔符惯例） */
+const posixPath = (p: string): string => p.replace(/\\/g, '/')
+
+/** 取路径最后一段文件名 */
+const baseName = (p: string): string => {
+  const segs = posixPath(p)
+    .split('/')
+    .filter((s) => s !== '')
+  return segs[segs.length - 1] ?? ''
+}
+
+/**
+ * Patch 文件头路径：优先使用两侧共同父目录下的相对路径（可被 git apply 消费），
+ * 不同盘/不同根/仅一侧有路径时回退文件名；绝不输出绝对路径。
+ */
+function patchLabels(ctx: ReportContext): { left: string; right: string } {
+  const leftPath = ctx.leftPath?.trim() ?? ''
+  const rightPath = ctx.rightPath?.trim() ?? ''
+  const fallbackLeft = baseName(leftPath) || ctx.leftName || 'left'
+  const fallbackRight = baseName(rightPath) || ctx.rightName || 'right'
+  if (leftPath === '' || rightPath === '') {
+    return { left: fallbackLeft, right: fallbackRight }
+  }
+  const lSegs = posixPath(leftPath)
+    .split('/')
+    .filter((s) => s !== '')
+  const rSegs = posixPath(rightPath)
+    .split('/')
+    .filter((s) => s !== '')
+  const lDirs = lSegs.slice(0, -1)
+  const rDirs = rSegs.slice(0, -1)
+  let common = 0
+  while (
+    common < lDirs.length &&
+    common < rDirs.length &&
+    lDirs[common].toLowerCase() === rDirs[common].toLowerCase()
+  ) {
+    common++
+  }
+  // 没有任何共同父目录（不同盘/不同根）：回退文件名，避免把绝对路径写进 patch
+  if (common === 0) return { left: fallbackLeft, right: fallbackRight }
+  const leftRel = lSegs.slice(common).join('/')
+  const rightRel = rSegs.slice(common).join('/')
+  return {
+    left: leftRel || fallbackLeft,
+    right: rightRel || fallbackRight
+  }
+}
 
 /**
  * 标准 unified diff 报告（git diff 风格，可直接 git apply / patch 消费）：
@@ -680,9 +744,8 @@ export function buildPatchReport(
   ctx: ReportContext,
   tail?: { leftNoNewline?: boolean; rightNoNewline?: boolean }
 ): string {
-  const l = ctx.leftPath ?? ctx.leftName ?? 'left'
-  const r = ctx.rightPath ?? ctx.rightName ?? 'right'
-  const out: string[] = [`--- a/${l}`, `+++ b/${r}`]
+  const labels = patchLabels(ctx)
+  const out: string[] = [`--- a/${labels.left}`, `+++ b/${labels.right}`]
 
   // 段内行序列：每行记录来源侧（L=旧/R=新），供尾部无换行标记定位；
   // modified 行展开为 -旧/+新 两行，body 与 rows 索引不一一对应，经 rowBodyStart 映射

@@ -2,9 +2,10 @@ import { app, dialog, ipcMain, shell } from 'electron'
 import fs from 'fs'
 import { dirname, join } from 'path'
 import { getAppState, saveStateAsync } from '../appState'
-import { decodeMaybeWorker, readTextFile, SNAPSHOT_MAX_BYTES } from '../fileService'
+import { decodeMaybeWorker, readTextFile } from '../fileService'
 import { SCAN_CONCURRENCY } from '../folderScan'
 import { TEXT_EXTENSIONS } from '../../shared/textExtensions'
+import { SNAPSHOT_MAX_BYTES } from '../../shared/limits'
 
 /** 批量读取的路径数上限（渲染端快照保存按差异条目收集，超出说明异常输入，整体拒绝） */
 const READ_BATCH_MAX_PATHS = 256

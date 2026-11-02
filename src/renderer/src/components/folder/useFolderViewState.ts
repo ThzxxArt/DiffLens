@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FolderEntry, FolderEntryStatus } from '../../../../preload/index'
-import { compileIgnoreRules, IGNORE_RULES_MAX } from '../../../../shared/ignoreRules'
+import {
+  compileIgnoreRules,
+  IGNORE_RULES_MAX,
+  IGNORE_RULE_MAX_LEN
+} from '../../../../shared/ignoreRules'
 import { countFolderStats } from '../../diff/folderReport'
 import type { FolderSnapshot, SnapshotChange, SnapshotDiffResult } from '../../diff/snapshotDiff'
 import { buildFolderTree, filterEntries, flattenFolderTree, relExt } from '../folderTree'
@@ -69,12 +73,16 @@ export function useFolderViewState({
     setChangeFilter(null)
   }, [leftDir, rightDir])
 
-  /** 应用忽略规则草稿：逐行解析、去空白、去空行，截断至上限后回调重扫 */
+  /**
+   * 应用忽略规则草稿：逐行解析、去空白、去空行，并过滤超长规则。
+   * 超长规则会让主进程 IPC 校验整体拒绝数组（连累其他合法规则），
+   * UI 必须与主进程上限对齐——无效项仍会实时提示，但不会随应用下发。
+   */
   const applyIgnoreDraft = useCallback((): void => {
     const rules = ignoreDraft
       .split('\n')
       .map((r) => r.trim())
-      .filter((r) => r !== '')
+      .filter((r) => r !== '' && r.length <= IGNORE_RULE_MAX_LEN)
       .slice(0, IGNORE_RULES_MAX)
     setIgnoreOpen(false)
     onIgnoreRulesChange(rules)

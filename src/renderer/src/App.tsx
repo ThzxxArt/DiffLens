@@ -22,6 +22,11 @@ import { useFilePanes } from './hooks/useFilePanes'
 import { useDiffView } from './hooks/useDiffView'
 import { useFolderComparison } from './hooks/useFolderComparison'
 import { useReportExport } from './hooks/useReportExport'
+import { useFolderViewState } from './components/folder/useFolderViewState'
+import type { FolderEntry } from '../../preload/index'
+
+/** 无文件夹会话时的稳定空条目（避免每次 render 生成新数组触发无意义派生计算） */
+const EMPTY_FOLDER_ENTRIES: FolderEntry[] = []
 
 export default function App(): ReactElement {
   const {
@@ -110,6 +115,18 @@ export default function App(): ReactElement {
     setFolderIgnoreRules,
     appVersion
   })
+  // 文件夹视图状态提升到 App：从文件夹进入单文件对比再返回时，搜索/过滤/折叠不丢失；
+  // 目录对变化时 useFolderViewState 内部会自动重置（退出文件夹时 leftDir/rightDir 变为空串）
+  const folderView = useFolderViewState({
+    leftDir: folderState?.leftDir ?? '',
+    rightDir: folderState?.rightDir ?? '',
+    entries: folderState?.entries ?? EMPTY_FOLDER_ENTRIES,
+    snapshot,
+    snapshotDiff,
+    onlyDiff: folderOnlyDiff,
+    onOnlyDiffChange: setFolderOnlyDiff,
+    onIgnoreRulesChange: handleIgnoreRulesChange
+  })
   const exportReport = useReportExport({
     diff,
     rows,
@@ -154,7 +171,7 @@ export default function App(): ReactElement {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'f') return
-      if (pasteSide !== null || menu !== null) return
+      if (pasteSide !== null || menu !== null || aboutOpen) return
       e.preventDefault()
       const target = mode === 'folder' ? folderSearchRef.current : searchInputRef.current
       target?.focus()
@@ -162,31 +179,31 @@ export default function App(): ReactElement {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, pasteSide, menu, searchInputRef])
+  }, [mode, pasteSide, menu, aboutOpen, searchInputRef])
 
   // 差异导航快捷键：F7 下一处 / Shift+F7 上一处；粘贴弹窗或右键菜单打开时不抢占
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'F7') return
-      if (pasteSide !== null || menu !== null) return
+      if (mode !== 'file' || pasteSide !== null || menu !== null || aboutOpen) return
       e.preventDefault()
       go(e.shiftKey ? -1 : 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [go, pasteSide, menu])
+  }, [mode, go, pasteSide, menu, aboutOpen])
 
   // 差异文件导航快捷键：Alt+↓ 下一个 / Alt+↑ 上一个（仅从文件夹进入的单文件对比可用）
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (!e.altKey || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
-      if (pasteSide !== null || menu !== null || folderEntryCursor === null) return
+      if (pasteSide !== null || menu !== null || aboutOpen || folderEntryCursor === null) return
       e.preventDefault()
       goDiffFile(e.key === 'ArrowDown' ? 1 : -1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [goDiffFile, pasteSide, menu, folderEntryCursor])
+  }, [goDiffFile, pasteSide, menu, aboutOpen, folderEntryCursor])
 
   // 行级右键菜单
   const onRowContext = useCallback(
@@ -355,6 +372,7 @@ export default function App(): ReactElement {
 
       {mode === 'folder' && folderState ? (
         <FolderView
+          view={folderView}
           leftDir={folderState.leftDir}
           rightDir={folderState.rightDir}
           entries={folderState.entries}

@@ -22,6 +22,8 @@ DiffLens 是一款跨平台桌面文本对比工具，帮助你快速定位两�
 - **后台文件解码**：大文件解码与编码探测在主进程 worker 线程后台进行（GBK 大文件解码不再阻塞界面响应），解码失败自动回退同步路径
 - **差异导航**：一键“上一处 / 下一处”在差异之间跳跃，支持 F7 / Shift+F7 快捷键
 - **视图内文本搜索**：单文件对比视图内搜索任意内容——Ctrl+F 聚焦、大小写不敏感即时命中计数、Enter / Shift+Enter 在命中行间循环跳转（虚拟滚动下精确定位）、行内命中子串高亮、Esc 清空、有内容时 × 一键清空；搜索基于全量行，与“仅看差异”视图过滤互不影响；切换比较选项/更换文件触发重算后，命中计数与高亮行保持一致（自动钳制重定位）；文件夹模式 Ctrl+F 同样聚焦文件名搜索框（跨模式一致）
+- **视图状态保留**：从文件夹进入单文件对比再返回，搜索词/状态过滤/扩展名过滤/折叠状态不丢失；差异正文支持拖选与 Ctrl+C 复制子串
+- **dotfile 支持**：`.gitignore`、`.env.local`、`.editorconfig` 等 dotfile 与 Dockerfile/Makefile 等无扩展名文本正常参与拖拽、语义判等与文件夹对比
 - **仅看差异**：一键过滤未更改行，连续相同内容折叠为提示行，专注浏览差异
 - **交换左右侧**：一键互换两侧内容与视角
 - **智能编码识别**：自动探测 UTF-8 / UTF-16 / GBK（含 BOM），中文文档不乱码
@@ -95,9 +97,10 @@ npm run build
 ### 打包安装包
 
 ```bash
-npm run build:win    # Windows NSIS 安装包（需在 Windows 上执行）
-npm run build:mac    # macOS DMG
-npm run build:linux  # Linux AppImage / deb
+npm run build:win       # Windows NSIS 安装包（需在 Windows 上执行）
+npm run build:mac       # macOS DMG
+npm run build:linux     # Linux AppImage / deb
+npm run build:linux:rpm # Linux RPM（需要 rpmbuild）
 ```
 
 ---
@@ -121,9 +124,9 @@ src/
 │   ├── windowState.ts       # 窗口状态纯逻辑
 │   └── ipc/                 # appIpc / fileIpc / folderIpc
 ├── preload/                 # contextBridge 安全桥，仅暴露最小 API
-├── shared/                  # 两进程共用纯逻辑（忽略规则 / 路径 / 文本扩展名）
+├── shared/                  # 两进程共用纯逻辑（容量上限 / 忽略规则 / 路径 / 文本判定）
 └── renderer/src/            # 渲染进程
-    ├── App.tsx              # 编排层（布局 / 快捷键 / 弹框）
+    ├── App.tsx              # 编排层（布局 / 快捷键 / 弹框 / 文件夹视图状态）
     ├── app/                 # 常量、偏好读写、关于信息
     ├── hooks/               # usePreferences / useToast / useFilePanes
     │                        # useDiffView / useFolderComparison / useReportExport
@@ -143,9 +146,9 @@ e2e/                         # Playwright E2E（真实 Electron 主链路）
 
 ## 🧪 质量与工程化
 
-- **691 个单测 + 32 条 E2E**，覆盖率 statements 94.75% / branches 89.49% / functions 95.11% / lines 95.82%
-- **ESLint 10 flat config + Prettier + EditorConfig**，CI 强制执行 typecheck / lint / format / test / build
-- **GitHub Actions CI + Dependabot**，依赖与 Actions 自动更新
+- **715 个单测 + 35 条 E2E**，覆盖率 statements 94.62% / branches 89.48% / functions 95.23% / lines 95.94%
+- **ESLint 10 flat config + Prettier + EditorConfig**，CI 强制执行 typecheck / lint（0 warning）/ format / test / build
+- **GitHub Actions CI 含 Windows E2E job + Dependabot**，依赖与 Actions 自动更新；覆盖率阈值 90 / 85 / 90 / 90
 
 ---
 
@@ -154,7 +157,7 @@ e2e/                         # Playwright E2E（真实 Electron 主链路）
 - 作者：ThzxxArt
 - 仓库：https://github.com/ThzxxArt/DiffLens
 - 许可证：MIT License（见 [LICENSE](./LICENSE)）
-- 版本：0.12.0
+- 版本：0.12.1
 
 ---
 

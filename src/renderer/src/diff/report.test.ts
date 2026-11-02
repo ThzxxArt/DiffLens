@@ -481,15 +481,40 @@ describe('buildPatchReport - 标准 unified diff（0.11.0）', () => {
     expect(patch).toBe('--- a/a.txt\n+++ b/b.txt')
   })
 
-  it('文件头优先使用完整路径（有 leftPath/rightPath 时）', () => {
+  it('文件头使用共同父目录下的相对路径，不输出绝对路径', () => {
     const { rows } = computeDiff('a', 'b')
     const patch = buildPatchReport(rows, {
       ...ctx,
-      leftPath: 'C:/work/old.txt',
+      leftPath: 'C:\\work\\old.txt',
       rightPath: 'C:/work/new.txt'
     })
-    expect(patch).toContain('--- a/C:/work/old.txt')
-    expect(patch).toContain('+++ b/C:/work/new.txt')
+    expect(patch).toContain('--- a/old.txt')
+    expect(patch).toContain('+++ b/new.txt')
+    expect(patch).not.toContain('C:/work')
+  })
+
+  it('嵌套目录保留共同父目录之后的相对路径', () => {
+    const { rows } = computeDiff('a', 'b')
+    const patch = buildPatchReport(rows, {
+      ...ctx,
+      leftPath: '/repo/src/old.txt',
+      rightPath: '/repo/src/sub/new.txt'
+    })
+    expect(patch).toContain('--- a/old.txt')
+    expect(patch).toContain('+++ b/sub/new.txt')
+  })
+
+  it('不同盘/不同根回退文件名，避免把绝对路径写进 patch', () => {
+    const { rows } = computeDiff('a', 'b')
+    const patch = buildPatchReport(rows, {
+      ...ctx,
+      leftPath: 'C:/left/old.txt',
+      rightPath: 'D:/right/new.txt'
+    })
+    expect(patch).toContain('--- a/old.txt')
+    expect(patch).toContain('+++ b/new.txt')
+    expect(patch).not.toContain('C:/left')
+    expect(patch).not.toContain('D:/right')
   })
 })
 
@@ -517,6 +542,17 @@ describe('canBuildPatch - 判等污染判定（0.11.0）', () => {
 
   it('完全一致的空变更行集可导出', () => {
     const { rows } = computeDiff('same', 'same')
+    expect(canBuildPatch(rows)).toBe(true)
+  })
+
+  it('忽略空行导致行号不连续时不可导出（hunk 计数会错位）', () => {
+    const { rows } = computeDiff('a\n\nb', 'a\n\nB', { ignoreBlankLines: true })
+    // rows 为 a(1) 与 b/B(3)，空行被剔除；patch 无法表达省略的行
+    expect(canBuildPatch(rows)).toBe(false)
+  })
+
+  it('忽略空行但文件中没有空行时仍可导出', () => {
+    const { rows } = computeDiff('a\nb', 'a\nB', { ignoreBlankLines: true })
     expect(canBuildPatch(rows)).toBe(true)
   })
 })

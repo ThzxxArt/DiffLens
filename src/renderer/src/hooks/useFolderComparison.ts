@@ -16,6 +16,7 @@ import {
   diffSnapshot,
   isDiffStatus,
   parseSnapshot,
+  serializeSnapshot,
   snapshotDirsMatch,
   SNAPSHOT_CONTENTS_MAX_CHARS,
   SNAPSHOT_FILE_MAX_BYTES,
@@ -131,6 +132,19 @@ export function useFolderComparison({
    */
   const snapshotSaveSeqRef = useRef(0)
 
+  /**
+   * 文件夹条目打开世代号：快速双击/连续 Alt 导航时，只允许最新一次请求写入两侧面板，
+   * 避免慢的旧读取覆盖新条目的一侧（左右来自不同文件的错配）。
+   */
+  const entryOpenSeqRef = useRef(0)
+
+  /** 作废在途快照保存并复位遮罩（退出/返回/重选/重扫共用同一口径）。 */
+  const cancelSnapshotSave = useCallback((): void => {
+    snapshotSaveSeqRef.current++
+    setSnapshotSaving(false)
+    setSnapshotProgress(null)
+  }, [])
+
   /** 文件夹对比：选择两侧目录并扫描（扫描完成切入文件夹模式；语义判等开关与忽略规则随扫描参数下发）。 */
   const runFolderScan = useCallback(
     async (
@@ -139,6 +153,9 @@ export function useFolderComparison({
       semantic: boolean,
       ignoreRules: string[]
     ): Promise<void> => {
+      // 新一轮扫描开始：旧目录会话的快照保存在途结果必须作废，
+      // 否则读取完成后会在新会话上弹出名不符实的保存对话框
+      cancelSnapshotSave()
       const seq = ++scanSeqRef.current
       setFolderScanning(true)
       setScanProgress(null)
@@ -171,7 +188,7 @@ export function useFolderComparison({
         }
       }
     },
-    [showToast, folderState]
+    [showToast, folderState, cancelSnapshotSave]
   )
 
   // 订阅主进程扫描进度推送：仅显示与当前会话序号一致的事件（旧扫描迟到进度天然丢弃）
@@ -185,6 +202,8 @@ export function useFolderComparison({
 
   /** 入口：连续选择左右两个文件夹后开始对比 */
   const startFolderCompare = useCallback(async (): Promise<void> => {
+    // 用户发起新的目录选择：立即作废旧会话在途快照保存
+    cancelSnapshotSave()
     let leftDir: string | null
     let rightDir: string | null
     try {
@@ -203,7 +222,7 @@ export function useFolderComparison({
       return
     }
     await runFolderScan(leftDir, rightDir, folderSemantic, folderIgnoreRules)
-  }, [showToast, runFolderScan, folderSemantic, folderIgnoreRules])
+  }, [showToast, runFolderScan, folderSemantic, folderIgnoreRules, cancelSnapshotSave])
 
   /** 语义判等开关切换：记忆开关并对当前结果重新扫描（状态判定随语义变化） */
   const handleSemanticChange = useCallback(
@@ -365,9 +384,13 @@ export function useFolderComparison({
       // 世代号推进（读取完成后才离开视图）：不再弹保存对话框（静默终止）
       if (seq !== snapshotSaveSeqRef.current) return
       const defaultName = `DiffLens-snapshot-${stamp()}.json`
+      // 字符上限之后再做最终字节上限校验：控制字符 JSON 转义可能膨胀到 6 倍，
+      // 超限时降级为纯状态快照，保证「保存成功 = 日后一定能加载」
+      const serialized = serializeSnapshot(snap)
+      if (serialized.degraded) contentsOverflow = true
       let res: { ok: boolean; path: string | null }
       try {
-        res = await window.api.saveReport(JSON.stringify(snap, null, 2), defaultName)
+        res = await window.api.saveReport(serialized.json, defaultName)
       } catch {
         showToast('快照保存失败，请重试')
         return
@@ -376,7 +399,7 @@ export function useFolderComparison({
         const p = res.path
         showToast(
           contentsOverflow
-            ? `快照已保存（差异内容总量超限，仅保存状态不含内容）：${p}`
+            ? `快照已保存（差异内容体积超限，仅保存状态不含内容）：${p}`
             : `快照已保存：${p}`,
           {
             label: '打开文件夹',
@@ -465,27 +488,34 @@ export function useFolderComparison({
   const openFolderEntry = useCallback(
     async (entry: FolderEntry, navScope: string | null = null): Promise<void> => {
       if (!folderState) return
+      const seq = ++entryOpenSeqRef.current
+      const isCurrent = (): boolean => seq === entryOpenSeqRef.current
       setFolderNavScope(navScope)
       // 清空指定侧面板：双击新条目的任一读取失败路径都必须清掉旧内容，
       // 否则成功侧与旧内容组成“名不符实”的对比（面板头还是旧文件名）
       const clearSide = (side: 'left' | 'right'): void => {
+        if (!isCurrent()) return
         if (side === 'left') setPaneL(null)
         else setPaneR(null)
       }
       const loadSide = async (side: 'left' | 'right', path: string | null): Promise<boolean> => {
+        if (!isCurrent()) return false
         // 条目单侧不存在：清空该侧面板（避免残留上一个条目的内容）
         if (path === null) {
           clearSide(side)
-          return true
+          return isCurrent()
         }
         let data: Awaited<ReturnType<typeof window.api.readByPath>>
         try {
           data = await window.api.readByPath(path)
         } catch {
+          if (!isCurrent()) return false
           showToast('文件读取失败，请重试')
           clearSide(side)
           return false
         }
+        // 慢的旧请求不得写回任何一侧（新请求已接管）
+        if (!isCurrent()) return false
         if (!data) {
           clearSide(side)
           return false
@@ -512,6 +542,7 @@ export function useFolderComparison({
                 : 'right'
         const baseText = baseSide === 'left' ? snapContents.left : snapContents.right
         if (baseText !== null) {
+          if (!isCurrent()) return
           setPaneL({
             meta: {
               name: `快照 · ${entry.rel.split('/').pop() ?? entry.rel}`,
@@ -529,6 +560,7 @@ export function useFolderComparison({
           ? `${baseSide === 'left' ? folderState.leftDir : folderState.rightDir}/${entry.rel}`
           : null
         const okCur = await loadSide('right', curPath)
+        if (!isCurrent()) return
         if (baseText !== null || okCur) {
           setFolderEntryCursor(entry.rel)
           setMode('file')
@@ -539,10 +571,12 @@ export function useFolderComparison({
         'left',
         entry.status === 'right-only' ? null : `${folderState.leftDir}/${entry.rel}`
       )
+      if (!isCurrent()) return
       const okR = await loadSide(
         'right',
         entry.status === 'left-only' ? null : `${folderState.rightDir}/${entry.rel}`
       )
+      if (!isCurrent()) return
       // 至少一侧装载成功才进入对比视图（双侧失败保持文件夹列表）
       if (okL || okR) {
         setFolderEntryCursor(entry.rel)
@@ -598,26 +632,24 @@ export function useFolderComparison({
 
   /** 从单文件对比返回文件夹列表（清空两侧面板与导航游标/聚合范围，文件夹扫描结果保留） */
   const backToFolder = useCallback((): void => {
-    // 作废在途快照保存（用户主动离开当前视图）：保存流程静默终止（防御未来交互路径）
-    snapshotSaveSeqRef.current++
-    setSnapshotSaving(false)
-    setSnapshotProgress(null)
+    // 作废在途快照保存与条目读取（用户主动离开当前视图）
+    entryOpenSeqRef.current++
+    cancelSnapshotSave()
     clearPanes()
     setFolderEntryCursor(null)
     setFolderNavScope(null)
     setMode('folder')
-  }, [clearPanes])
+  }, [clearPanes, cancelSnapshotSave])
 
   /** 退出文件夹对比（清空文件夹状态、导航游标/聚合范围、快照对照与两侧面板，回到单文件空态） */
   const exitFolder = useCallback((): void => {
-    // 作废在途扫描并复位扫描态：迟到的扫描结果不得把界面拉回文件夹模式，
+    // 作废在途扫描/条目读取并复位扫描态：迟到的结果不得把界面拉回文件夹模式，
     // 也不得让扫描遮罩与进度残留到下一次文件夹会话
     scanSeqRef.current++
+    entryOpenSeqRef.current++
     // 作废在途快照保存：批量读取完成后不得在单文件空态上突然弹出保存对话框
     //（保存的目录对上下文已消失）；遮罩即时复位（finally 的复位幂等兜底）
-    snapshotSaveSeqRef.current++
-    setSnapshotSaving(false)
-    setSnapshotProgress(null)
+    cancelSnapshotSave()
     setFolderScanning(false)
     setScanProgress(null)
     setFolderState(null)
@@ -627,7 +659,7 @@ export function useFolderComparison({
     setSnapshot(null)
     setSnapshotDiff(null)
     setMode('file')
-  }, [clearPanes])
+  }, [clearPanes, cancelSnapshotSave])
 
   return {
     mode,

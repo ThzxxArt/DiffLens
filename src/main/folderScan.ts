@@ -95,8 +95,7 @@ export interface SemanticOptions {
   decode: (buf: Buffer) => Promise<string>
 }
 
-/** 语义判等参与文件的大小上限（2MB）：覆盖绝大多数文本源码/配置；超大文件维持字节级判定 */
-export const SEMANTIC_MAX_BYTES = 2 * 1024 * 1024
+export { SEMANTIC_MAX_BYTES } from '../shared/limits'
 
 /**
  * 语义判等：剔除全部空白（含换行，与字符级对比的判等语义一致）后拼接比较；

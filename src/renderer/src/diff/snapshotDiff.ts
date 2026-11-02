@@ -1,5 +1,10 @@
 import type { FolderEntry, FolderEntryStatus } from '../../../preload/index'
 import { normDir } from '../../../shared/pathNorm'
+import {
+  SNAPSHOT_CONTENTS_MAX_CHARS,
+  SNAPSHOT_FILE_MAX_BYTES,
+  SNAPSHOT_MAX_BYTES
+} from '../../../shared/limits'
 
 /**
  * 文件夹对比快照基线的纯逻辑模块：
@@ -11,17 +16,7 @@ import { normDir } from '../../../shared/pathNorm'
 /** 快照结构版本（不兼容变更时递增并让旧文件作废；v1 无 contents 字段，加载时功能降级为纯状态对照） */
 export const SNAPSHOT_VERSION = 2
 
-/**
- * 快照内容保存的单文件字节上限（对齐主进程语义判等的 SEMANTIC_MAX_BYTES）：
- * 超限侧不存内容（快照仍保存状态），双击该条目走常规当前文件对比。
- */
-export const SNAPSHOT_FILE_MAX_BYTES = 2 * 1024 * 1024
-
-/**
- * 快照内容总量上限（字符数）：差异条目内容合计超出时整体降级为纯状态快照
- * （保存永不失败，行为可预期优于按字典序随机截断），toast 告知用户。
- */
-export const SNAPSHOT_CONTENTS_MAX_CHARS = 32 * 1024 * 1024
+export { SNAPSHOT_CONTENTS_MAX_CHARS, SNAPSHOT_FILE_MAX_BYTES, SNAPSHOT_MAX_BYTES }
 
 /** 单个差异条目的双侧内容（对应侧快照时刻不存在或超限为 null） */
 export interface SnapshotContents {
@@ -43,6 +38,35 @@ export interface FolderSnapshot {
   savedAt: number
   /** v2 可选：差异条目的双侧内容（key 为 rel；仅 isDiffStatus 条目；超限/总量降级时缺失） */
   contents?: Record<string, SnapshotContents>
+}
+
+/** 快照序列化结果：degraded 表示内容因序列化体积超限被移除（仅保存状态） */
+export interface SerializedSnapshot {
+  json: string
+  degraded: boolean
+}
+
+/**
+ * 序列化快照并执行最终字节上限校验。
+ *
+ * 字符数上限只是第一道防线：JSON.stringify 会把控制字符转义为 `\\uXXXX`，
+ * 最坏 1 个字符膨胀为 6 字节；中文按 UTF-8 3 字节；因此 32M 字符的内容
+ * 理论上可超过 128MB 的加载上限。这里按最终 UTF-8 字节数复核，超限时
+ * 移除 contents 降级为纯状态快照，保证「保存成功的快照一定能被加载」。
+ */
+export function serializeSnapshot(
+  snap: FolderSnapshot,
+  maxBytes: number = SNAPSHOT_MAX_BYTES
+): SerializedSnapshot {
+  const json = JSON.stringify(snap, null, 2)
+  if (new TextEncoder().encode(json).byteLength <= maxBytes) {
+    return { json, degraded: false }
+  }
+  const { contents: _contents, ...statusOnly } = snap
+  return {
+    json: JSON.stringify(statusOnly, null, 2),
+    degraded: true
+  }
 }
 
 /** 条目状态的合法值（解析校验共用） */

@@ -6,6 +6,9 @@
  */
 export function normDir(p: string): string {
   let s = p.replace(/\\/g, '/')
+  // Windows 盘符根（C:/、C:\、C://）保留根斜杠：C:/ 是根目录，C: 是驱动器相对路径，
+  // 二者不是同一个位置；统一成 c:/ 后也不会与 C: 撞键
+  if (/^[A-Za-z]:\/+$/.test(s)) return s[0].toLowerCase() + ':/'
   while (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1)
   if (s.length >= 2 && s[1] === ':') s = s[0].toLowerCase() + s.slice(1)
   return s

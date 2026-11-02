@@ -1,7 +1,6 @@
 import type { DiffOptions, DiffSummary } from '../diff/diffEngine'
 
-/** 单侧文件大小上限（10MB）：超限直接拦截，避免超大文件卡死界面 */
-export const MAX_FILE_SIZE = 10 * 1024 * 1024
+export { MAX_FILE_SIZE } from '../../../shared/limits'
 
 /** 快照保存批量读取的分批大小（主进程 folder:read-batch 上限 256，留余量） */
 export const SNAPSHOT_READ_BATCH = 200

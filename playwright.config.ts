@@ -7,14 +7,14 @@ import { defineConfig } from '@playwright/test'
  */
 export default defineConfig({
   testDir: 'e2e',
-  // Electron 启动 + 窗口就绪整体放宽，避免慢机误报
-  timeout: 60_000,
+  // Electron 启动 + 窗口就绪整体放宽，避免慢机误报；CI 慢机再放宽并允许一次重试
+  timeout: process.env.CI ? 90_000 : 60_000,
   expect: {
-    timeout: 10_000
+    timeout: process.env.CI ? 15_000 : 10_000
   },
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   outputDir: 'test-results',
   use: {

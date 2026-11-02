@@ -39,12 +39,12 @@ export function saveStateSync(): void {
   }
 }
 
-/** 写回持久化状态（IPC handler 内专用：异步写盘不阻塞事件循环，失败静默忽略——
- *  目录只读/磁盘满等偏好记忆失效但不影响本次会话；appState 内存态始终最新） */
+/**
+ * 写回持久化状态（IPC handler 内专用）：状态文件只有几百字节，统一同步写。
+ * 此前异步 fire-and-forget 与窗口 close 的同步写存在竞态——旧异步写可能晚于
+ * close 的同步写落盘，把最新窗口位置覆盖成旧值；同步写彻底消除该竞态。
+ * 目录只读/磁盘满等失败静默忽略，不影响本次会话。
+ */
 export function saveStateAsync(): void {
-  try {
-    void fs.promises.writeFile(stateFile(), serializeState(), 'utf-8').catch(() => {})
-  } catch {
-    // 序列化失败等：忽略
-  }
+  saveStateSync()
 }

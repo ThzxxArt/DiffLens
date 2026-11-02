@@ -2,22 +2,17 @@ import { join, sep } from 'path'
 import { Worker } from 'worker_threads'
 import fs from 'fs'
 import { decodeText, type DecodeResult } from './decode'
-import { TEXT_EXTENSIONS } from '../shared/textExtensions'
+import { isTextFileName } from '../shared/textExtensions'
+import { MAX_FILE_SIZE } from '../shared/limits'
 
-/** 单侧文件大小上限（10MB）：超限直接拦截，避免超大文件卡死界面 */
-export const MAX_FILE_SIZE = 10 * 1024 * 1024
+export { MAX_FILE_SIZE } from '../shared/limits'
 
 /** 解码快路径阈值（256KB）：小缓冲同步解码（毫秒级），大缓冲派发 worker 后台解码 */
 const DECODE_FAST_PATH_BYTES = 256 * 1024
 
-/** 快照文件读取上限（128MB）：快照为应用自有 JSON，可大于通用文件的 10MB */
-export const SNAPSHOT_MAX_BYTES = 128 * 1024 * 1024
-
-/** 相对路径是否为文本文件（按扩展名，语义判等文本判定共用） */
+/** 相对路径是否为文本文件（按最后一段文件名，语义判等文本判定共用） */
 export function isTextRel(rel: string): boolean {
-  const dot = rel.lastIndexOf('.')
-  if (dot < 0) return true
-  return TEXT_EXTENSIONS.includes(rel.slice(dot + 1).toLowerCase())
+  return isTextFileName(rel)
 }
 
 /**

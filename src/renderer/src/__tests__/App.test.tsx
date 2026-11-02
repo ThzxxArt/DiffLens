@@ -1161,6 +1161,35 @@ describe('App - 单文件视图搜索', () => {
   })
 })
 
+describe('App - 大文件 worker 结果到达后的搜索定位（0.12.1）', () => {
+  it('计算期间输入搜索：结果到达后计数与 active 高亮同步指向首个命中', async () => {
+    const lines = Array.from({ length: 2100 }, (_, i) =>
+      i === 1 ? 'target line here' : `line-${i}-content`
+    )
+    const text = lines.join('\n')
+    window.api = mockApi({
+      openFile: async (side) =>
+        side === 'left'
+          ? { path: '/tmp/big-l.txt', name: 'big-l.txt', text, encoding: 'UTF-8', binary: false }
+          : { path: '/tmp/big-r.txt', name: 'big-r.txt', text, encoding: 'UTF-8', binary: false }
+    })
+    render(<App />)
+    fireEvent.click(screen.getByText('打开左侧'))
+    await screen.findByText('导出报告')
+    fireEvent.click(screen.getByText('打开右侧'))
+    await screen.findAllByText('big-r.txt')
+    // 重输入进入 worker 重路径（jsdom 无 Worker，去抖后回退同步计算）
+    const input = screen.getByPlaceholderText('搜索内容… (Ctrl+F)')
+    fireEvent.change(input, { target: { value: 'target' } })
+    // 结果到达后：命中计数与 active 行必须同时存在（缺陷版本只有计数没有高亮）
+    expect(await screen.findByText('1 / 1', { selector: '.search-count' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(document.querySelectorAll('.diff-row.active').length).toBeGreaterThan(0)
+    })
+    expect(document.querySelector('.diff-row.active .ln')?.textContent).toBe('2')
+  })
+})
+
 describe('App - 状态栏行数', () => {
   // 文件名在 <b> 子元素内，getByText 只拼直接文本子节点无法跨元素匹配，
   // 用 container 取 .status-item 的完整 textContent 断言（含换行空白，正则放宽）
@@ -1531,6 +1560,63 @@ describe('App - 文件夹对比', () => {
   })
 })
 
+describe('App - 文件夹条目快速切换竞态（0.12.1）', () => {
+  it('慢的旧条目读取不覆盖后打开的新条目', async () => {
+    const entries = [
+      { rel: 'a.txt', status: 'different' as const, leftSize: 1, rightSize: 2 },
+      { rel: 'b.txt', status: 'different' as const, leftSize: 1, rightSize: 2 }
+    ]
+    const resolvers = new Map<
+      string,
+      (v: Awaited<ReturnType<typeof window.api.readByPath>>) => void
+    >()
+    const dirs = ['C:/left-dir', 'D:/right-dir']
+    let pick = 0
+    window.api = mockApi({
+      pickFolder: async () => dirs[pick++] ?? null,
+      scanFolder: async () => ({ entries, truncated: false, total: entries.length }),
+      readByPath: (p: string) =>
+        new Promise<Awaited<ReturnType<typeof window.api.readByPath>>>((resolve) => {
+          resolvers.set(p, resolve)
+        })
+    })
+    const fileData = (p: string) => ({
+      path: p,
+      name: p.split('/').pop() ?? '',
+      text: `content of ${p}`,
+      encoding: 'UTF-8',
+      binary: false
+    })
+    render(<App />)
+    fireEvent.click(screen.getByText('对比文件夹'))
+    await screen.findByText('a.txt')
+    fireEvent.dblClick(screen.getByText('a.txt'))
+    fireEvent.dblClick(screen.getByText('b.txt'))
+    // 两个左侧读取都在途；先完成 b 的两侧，再完成慢的 a
+    await waitFor(() => expect(resolvers.has('C:/left-dir/b.txt')).toBe(true))
+    await act(async () => {
+      resolvers.get('C:/left-dir/b.txt')!(fileData('C:/left-dir/b.txt'))
+    })
+    await waitFor(() => expect(resolvers.has('D:/right-dir/b.txt')).toBe(true))
+    await act(async () => {
+      resolvers.get('D:/right-dir/b.txt')!(fileData('D:/right-dir/b.txt'))
+    })
+    await waitFor(() =>
+      expect(Array.from(document.querySelectorAll('.pane-file')).map((e) => e.textContent)).toEqual(
+        ['b.txt', 'b.txt']
+      )
+    )
+    // a 的左侧此刻才返回：过期请求不得改写任何一侧
+    await act(async () => {
+      resolvers.get('C:/left-dir/a.txt')?.(fileData('C:/left-dir/a.txt'))
+    })
+    expect(Array.from(document.querySelectorAll('.pane-file')).map((e) => e.textContent)).toEqual([
+      'b.txt',
+      'b.txt'
+    ])
+  })
+})
+
 describe('App - 文件夹模式搜索与换目录状态重置（0.10.5）', () => {
   const entries = [
     { rel: 'a.txt', status: 'same' as const, leftSize: 3, rightSize: 3 },
@@ -1556,6 +1642,37 @@ describe('App - 文件夹模式搜索与换目录状态重置（0.10.5）', () =
     fireEvent.change(input, { target: { value: 'b' } })
     fireEvent.keyDown(input, { key: 'Escape' })
     expect(input).toHaveValue('')
+  })
+
+  it('从文件夹进入单文件再返回：搜索/过滤/折叠状态保留（0.12.1）', async () => {
+    const dirs = ['C:/left-dir', 'D:/right-dir']
+    let pick = 0
+    window.api = mockApi({
+      pickFolder: async () => dirs[pick++] ?? null,
+      scanFolder: async () => ({ entries, truncated: false, total: 3 }),
+      readByPath: async (p: string) => ({
+        path: p,
+        name: p.split('/').pop() ?? 'f',
+        text: 'content',
+        encoding: 'UTF-8',
+        binary: false
+      })
+    })
+    render(<App />)
+    fireEvent.click(screen.getByText('对比文件夹'))
+    await screen.findByText('b.txt')
+    // 搜索 b：列表只剩 b.txt；双击进入单文件对比
+    const input = screen.getByPlaceholderText(/搜索文件名…/)
+    fireEvent.change(input, { target: { value: 'b' } })
+    expect(screen.getByText('b.txt')).toBeInTheDocument()
+    fireEvent.dblClick(screen.getByText('b.txt'))
+    await screen.findByText('← 返回文件夹对比')
+    fireEvent.click(screen.getByText('← 返回文件夹对比'))
+    await screen.findByText('b.txt')
+    // 返回后搜索词仍在（视图状态由 App 持有，不随 FolderView 卸载丢失）
+    expect(screen.getByPlaceholderText(/搜索文件名…/)).toHaveValue('b')
+    expect(screen.queryByText('a.txt')).not.toBeInTheDocument()
+    expect(screen.queryByText('c.txt')).not.toBeInTheDocument()
   })
 
   it('重新选择新目录后旧搜索词不残留（换目录状态重置）', async () => {
@@ -2945,6 +3062,58 @@ describe('App - 快照内容级对照（v2）', () => {
     expect(saveReport).not.toHaveBeenCalled()
     expect(screen.queryByText(/快照已保存/)).not.toBeInTheDocument()
     expect(screen.queryByText(/正在读取差异文件内容/)).not.toBeInTheDocument()
+  })
+})
+
+describe('App - 快照保存在新扫描开始时作废（0.12.1）', () => {
+  it('保存读取期间点重新扫描：旧保存静默终止，不弹保存对话框', async () => {
+    const entries = Array.from({ length: 110 }, (_, i) => ({
+      rel: `d${String(i).padStart(3, '0')}.txt`,
+      status: 'different' as const,
+      leftSize: 1,
+      rightSize: 2
+    }))
+    const okFile = (p: string) => ({
+      path: p,
+      name: p.split('/').pop() ?? '',
+      text: '',
+      encoding: 'UTF-8',
+      binary: false
+    })
+    let readCall = 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let resolveSecond: (v: any) => void = () => {}
+    const saveReport = vi.fn(async () => ({ ok: true, path: 'C:/docs/snap.json' }))
+    const dirs = ['C:/left-dir', 'D:/right-dir']
+    let pick = 0
+    window.api = mockApi({
+      pickFolder: async () => dirs[pick++] ?? null,
+      scanFolder: async () => ({ entries, truncated: false, total: entries.length }),
+      readFilesByPaths: async (paths: string[]) => {
+        readCall++
+        if (readCall === 1) return { files: paths.map(okFile) }
+        // 第二批挂起：挂起期间用户触发重新扫描
+        return new Promise((res) => {
+          resolveSecond = res
+        }) as ReturnType<typeof window.api.readFilesByPaths>
+      },
+      saveReport
+    })
+    render(<App />)
+    fireEvent.click(screen.getByText('对比文件夹'))
+    await screen.findByRole('button', { name: '快照' })
+    fireEvent.click(screen.getByRole('button', { name: '快照' }))
+    fireEvent.click(screen.getByText('保存快照…'))
+    expect(await screen.findByText(/已读取 200 \/ 220/)).toBeInTheDocument()
+    // 新扫描开始：旧保存世代号推进
+    fireEvent.click(screen.getByRole('button', { name: '重新扫描' }))
+    await waitFor(() => expect(screen.queryByText(/正在读取差异文件内容/)).not.toBeInTheDocument())
+    // 第二批此刻完成：旧保存静默终止
+    await act(async () => {
+      resolveSecond({ files: [] })
+    })
+    expect(saveReport).not.toHaveBeenCalled()
+    expect(screen.queryByText(/快照已保存/)).not.toBeInTheDocument()
   })
 })
 

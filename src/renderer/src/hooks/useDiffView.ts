@@ -122,20 +122,28 @@ export function useDiffView({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [activeRowId, setActiveRowId] = useState<string | null>(null)
   const [navIndex, setNavIndex] = useState(0)
+  const prevQueryRef = useRef(searchQuery)
 
-  // 关键字变化：命中序号归零并定位到第一个命中行（GitHub 风格即时反馈）；
-  // 仅依赖 searchQuery（rows 变化触发的 hits 重算不抢跳，由下方 clamp 兜底）
+  /**
+   * 搜索命中集变化时统一维护「序号 + active 行」：
+   * - 关键字变化：序号归零并定位第一个命中行（GitHub 风格即时反馈）；
+   * - 仅 rows 变化（切选项 / 大文件 worker 结果到达 / 换文件）：序号钳制回有效范围，
+   *   并把 active 重新指向钳制后的命中行——rows 重建后行 id 全部重新编号，
+   *   旧 activeRowId 不再命中任何行，不重定位会导致计数与高亮脱节；
+   * - 命中归零：清空 active。
+   * searchIndex 有意不入依赖：Enter/Shift+Enter 推进序号时不能反向触发本效果。
+   */
   useEffect(() => {
-    setSearchIndex(0)
-    if (searchQuery.trim() !== '' && searchHits.length > 0) setActiveRowId(searchHits[0].id)
+    const queryChanged = prevQueryRef.current !== searchQuery
+    prevQueryRef.current = searchQuery
+    const next = queryChanged ? 0 : Math.min(searchIndex, Math.max(0, searchHits.length - 1))
+    setSearchIndex(next)
+    if (searchQuery.trim() === '') {
+      setActiveRowId(null)
+    } else {
+      setActiveRowId(searchHits.length > 0 ? searchHits[next].id : null)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery])
-
-  // diff 重算（切选项/交换/新文件）导致命中集变化：序号钳制回有效范围；
-  // 搜索仍激活但命中归零时同步清空 active 高亮（React 19 effect 时序变化暴露的回归锚）
-  useEffect(() => {
-    setSearchIndex((i) => Math.min(i, Math.max(0, searchHits.length - 1)))
-    if (searchQuery.trim() !== '' && searchHits.length === 0) setActiveRowId(null)
   }, [searchHits, searchQuery])
 
   // 搜索激活但命中归零时，active 行不应继续高亮（状态清空 effect 之外的渲染态兜底；

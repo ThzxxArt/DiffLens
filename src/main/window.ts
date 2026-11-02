@@ -5,9 +5,12 @@ import { clampBounds } from './windowState'
 import { getAppState, saveStateSync } from './appState'
 
 export function createWindow(): void {
-  // 恢复上次窗口尺寸/位置：越界 bounds 钳制回当前屏幕工作区，无记录时用默认尺寸
-  const wa = screen.getPrimaryDisplay().workArea
+  // 恢复上次窗口尺寸/位置：优先按 bounds 所在显示器的工作区钳制（多屏下不把副屏窗口
+  // 强行拉回主屏）；无记录时用主屏工作区与默认尺寸
   const state = getAppState()
+  const wa = state.bounds
+    ? screen.getDisplayMatching(state.bounds).workArea
+    : screen.getPrimaryDisplay().workArea
   const bounds = state.bounds ? clampBounds(state.bounds, wa) : null
   // 主窗口
   const mainWindow = new BrowserWindow({
